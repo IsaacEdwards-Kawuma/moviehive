@@ -1,12 +1,14 @@
 import { Router } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { optionalAuth } from '../middleware/auth.js';
 
 export const contentRouter = Router();
 
+const episodeOrderBy = [{ season: Prisma.SortOrder.asc }, { episode: Prisma.SortOrder.asc }] as const;
 const contentInclude = {
   contentGenres: { include: { genre: true } },
-  episodes: { orderBy: [{ season: 'asc' }, { episode: 'asc' }] },
+  episodes: { orderBy: [...episodeOrderBy] },
 };
 
 contentRouter.get('/', async (req, res) => {
@@ -93,7 +95,7 @@ contentRouter.get('/:id/episodes', async (req, res) => {
   const { id } = req.params;
   const content = await prisma.content.findUnique({
     where: { id, type: 'series' },
-    include: { episodes: { orderBy: [{ season: 'asc' }, { episode: 'asc' }] } },
+    include: { episodes: { orderBy: [...episodeOrderBy] } },
   });
   if (!content) {
     res.status(404).json({ error: 'Series not found' });

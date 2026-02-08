@@ -13,8 +13,8 @@ function resolveVideoUrl(videoUrl: string, req: Request): string {
   }
   // Local upload (e.g. /uploads/videos/xxx.mp4) — return absolute URL via the server
   if (videoUrl.startsWith('/uploads/')) {
-    const protocol = req.headers['x-forwarded-proto'] ?? 'http';
-    const host = req.headers['x-forwarded-host'] ?? req.headers.host ?? 'localhost:4000';
+    const protocol = req.get('x-forwarded-proto') ?? 'http';
+    const host = req.get('x-forwarded-host') ?? req.get('host') ?? 'localhost:4000';
     return `${protocol}://${host}${videoUrl}`;
   }
   // CDN prefix

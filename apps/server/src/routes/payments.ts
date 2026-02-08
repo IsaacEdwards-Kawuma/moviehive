@@ -36,7 +36,7 @@ paymentsRouter.post('/subscribe', requireAuth, async (req, res) => {
 });
 
 paymentsRouter.post('/webhook', (req, res) => {
-  const sig = req.headers['stripe-signature'];
+  const sig = req.get('stripe-signature');
   if (!sig || !process.env.STRIPE_WEBHOOK_SECRET) {
     res.status(400).json({ error: 'Webhook not configured' });
     return;
