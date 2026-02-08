@@ -98,8 +98,9 @@ Domain DNS  →  Spaceship
 3. Configure:
    - **Framework Preset:** Next.js
    - **Root Directory:** set to **`apps/web`** (so Vercel detects Next.js)
-   - **Install Command:** `npm install` | **Build Command:** `cd ../.. && npm run build -w @stream/shared && cd apps/web && npm run build` | **Output Directory:** `.next`
-   - Do **not** override Build Command or Install Command in the dashboard unless you know what you’re doing
+   - **Install Command:** `npm install`
+   - **Build Command:** `cd ../.. && npm run build -w @stream/shared && cd apps/web && npm run build`
+   - **Output Directory:** `.next`
 
 4. Add **Environment Variables**:
    - **Import from .env:** In **Settings → Environment Variables**, click **"Import from .env"** and paste the contents of `env.vercel.example` (or a file with just `NEXT_PUBLIC_API_URL=https://YOUR-RENDER-URL.onrender.com/api`). Replace the URL with your real Render API URL.
