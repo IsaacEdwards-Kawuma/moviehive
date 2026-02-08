@@ -15,9 +15,6 @@
     "db:studio": "npm run db:studio -w @stream/server",
     "lint": "npm run lint -w @stream/web"
   },
-  "dependencies": {
-    "next": "14.2.15"
-  },
   "devDependencies": {
     "@types/node": "^20.14.10",
     "concurrently": "^8.2.2"
