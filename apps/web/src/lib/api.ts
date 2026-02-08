@@ -1,4 +1,13 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '/api/server';
+const RENDER_API_BASE = 'https://moviehive-api.onrender.com/api';
+
+function getApiBase(): string {
+  const env = process.env.NEXT_PUBLIC_API_URL;
+  if (typeof window !== 'undefined') {
+    if (env && env.startsWith('http') && !env.includes('vercel.app')) return env;
+    if (window.location.origin.includes('vercel.app')) return RENDER_API_BASE;
+  }
+  return env ?? '/api/server';
+}
 
 let getAccessToken: (() => string | null) | null = null;
 export function setApiAccessTokenGetter(fn: () => string | null) {
@@ -12,7 +21,7 @@ async function request<T>(
   const { params, ...init } = options;
   const pathWithParams = path.startsWith('http')
     ? path
-    : `${API_BASE}${path}`;
+    : `${getApiBase()}${path}`;
   const url = new URL(pathWithParams, path.startsWith('http') ? undefined : 'http://localhost');
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
@@ -26,11 +35,20 @@ async function request<T>(
     ...(init.headers as Record<string, string>),
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(urlString, {
-    ...init,
-    credentials: 'include',
-    headers,
-  });
+  let res: Response;
+  try {
+    res = await fetch(urlString, {
+      ...init,
+      credentials: 'include',
+      headers,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Network error';
+    if (msg === 'Failed to fetch' || msg.includes('NetworkError')) {
+      throw new Error('Cannot reach server. Check your connection or try again in a moment.');
+    }
+    throw new Error(msg);
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || err.message || 'Request failed');
@@ -46,7 +64,7 @@ async function uploadFile(
 ): Promise<{ url: string; filename: string }> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    const urlStr = `${API_BASE}${path}`;
+    const urlStr = `${getApiBase()}${path}`;
     xhr.open('POST', urlStr);
     const token = typeof getAccessToken === 'function' ? getAccessToken() : null;
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
