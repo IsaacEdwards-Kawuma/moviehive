@@ -28,7 +28,7 @@ async function request<T>(
       if (v !== undefined && v !== '') url.searchParams.set(k, String(v));
     });
   }
-  const urlString = path.startsWith('http') ? url.toString() : url.pathname + url.search;
+  const urlString = pathWithParams.startsWith('http') ? url.toString() : url.pathname + url.search;
   const token = typeof getAccessToken === 'function' ? getAccessToken() : null;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
