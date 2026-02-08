@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/store/useAuthStore';
 
-export default function GoogleCallbackPage() {
+function GoogleCallbackContent() {
   const searchParams = useSearchParams();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [error, setError] = useState<string | null>(null);
@@ -71,5 +71,20 @@ export default function GoogleCallbackPage() {
         <p className="text-stream-text-secondary animate-pulse">Signing you in with Google...</p>
       </motion.div>
     </div>
+  );
+}
+
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-stream-bg flex flex-col items-center justify-center gap-4">
+          <div className="w-12 h-12 border-4 border-stream-accent border-t-transparent rounded-full animate-spin" />
+          <p className="text-stream-text-secondary animate-pulse">Signing you in...</p>
+        </div>
+      }
+    >
+      <GoogleCallbackContent />
+    </Suspense>
   );
 }
