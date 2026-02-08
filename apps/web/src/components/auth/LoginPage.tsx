@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -14,6 +15,7 @@ const CINEMATIC_IMAGES = [
 ];
 
 export function LoginPage() {
+  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,9 +36,9 @@ export function LoginPage() {
     onSuccess: (data) => {
       setAuth(data.user, data.accessToken ?? null);
       if (data.user?.role === 'ADMIN') {
-        window.location.href = '/admin';
+        router.push('/admin');
       } else {
-        window.location.href = '/';
+        router.push('/');
       }
     },
     onError: (err: Error) => setError(err.message),
@@ -47,9 +49,9 @@ export function LoginPage() {
     onSuccess: (data) => {
       setAuth(data.user, data.accessToken ?? null);
       if (data.user?.role === 'ADMIN') {
-        window.location.href = '/admin';
+        router.push('/admin');
       } else {
-        window.location.href = '/profiles';
+        router.push('/profiles');
       }
     },
     onError: (err: Error) => setError(err.message),

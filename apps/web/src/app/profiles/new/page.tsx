@@ -30,10 +30,6 @@ export default function NewProfilePage() {
       setError('Name is required');
       return;
     }
-    if (!accessToken) {
-      setError('Session expired. Please log in again.');
-      return;
-    }
     createMu.mutate();
   };
 
