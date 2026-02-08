@@ -121,7 +121,7 @@ export const api = {
       request(`/my-list/${contentId}?profileId=${profileId}`, { method: 'DELETE' }),
   },
   search: {
-    query: (q: string, params?: { genre?: string; year?: number; type?: string; page?: number }) =>
+    query: (q: string, params?: { genre?: string; year?: number; type?: string; page?: number; limit?: number }) =>
       request<{ data: Content[]; total: number; page: number; totalPages: number }>('/search', {
         params: { q, ...params } as Record<string, string | number | undefined>,
       }),
