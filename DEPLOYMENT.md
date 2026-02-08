@@ -46,42 +46,46 @@ Domain DNS  →  Spaceship
 
 ## Step 3: Deploy the Backend (Render)
 
-1. Go to [https://render.com](https://render.com) and sign up (use GitHub)
-2. Click **"New +"** → **"Web Service"**
-3. Connect your GitHub repo (`moviehive`)
-4. Configure:
+1. Go to [https://render.com](https://render.com) and sign up (use GitHub).
+2. Click **"New +"** → **"Web Service"**.
+3. Connect your GitHub account if needed, then select the **moviehive** repository.
+4. **Where to put everything on Render:**
+
+   **Main form (scroll down to see all fields):**
    - **Name:** `moviehive-api`
-   - **Region:** Oregon (or closest)
+   - **Region:** Oregon (or closest to you)
    - **Branch:** `main`
-   - **Root Directory:** (leave empty)
-   - **Runtime:** Node
-   - **Build Command:**
+   - **Root Directory:** leave **empty**
+   - **Runtime:** `Node`
+   - **Build Command:** paste this exactly:
      ```
-     npm install && cd apps/server && npx prisma generate && cd ../.. && npm run build -w @stream/shared && npm run build -w @stream/server
+     npm install && cd apps/server && npx prisma generate && cd ../.. && npm run build -w @stream/shared && npm run build:server
      ```
-   - **Start Command:**
+   - **Start Command:** paste this exactly:
      ```
      cd apps/server && npx prisma db push --skip-generate && node dist/index.js
      ```
    - **Plan:** Free
 
-5. Add **Environment Variables** (click "Advanced" → "Add Environment Variable"):
+5. **Environment Variables** — scroll to the **"Environment"** or **"Environment Variables"** section, click **"Add Environment Variable"**, and add these **one by one** (Key = name, Value = value):
 
-   | Key | Value |
-   |-----|-------|
+   | Key | Value (paste or type) |
+   |-----|----------------------|
    | `NODE_ENV` | `production` |
    | `PORT` | `4000` |
-   | `DATABASE_URL` | `postgresql://...` (your Neon connection string) |
-   | `JWT_SECRET` | (click "Generate" for a random value) |
-   | `JWT_REFRESH_SECRET` | (click "Generate" for a random value) |
-   | `CORS_ORIGIN` | `https://moviehive.com,https://www.moviehive.com` |
-   | `GOOGLE_CLIENT_ID` | `265156455711-u2gj4sjp6qv26f01f2k8edasd98rkf4m.apps.googleusercontent.com` |
-   | `GOOGLE_CLIENT_SECRET` | (your Google client secret) |
-   | `GOOGLE_CALLBACK_URL` | `https://moviehive-api.onrender.com/api/auth/google/callback` |
+   | `DATABASE_URL` | Your Neon connection string (from Neon dashboard, e.g. `postgresql://user:pass@host/db?sslmode=require`) |
+   | `JWT_SECRET` | Any long random string (e.g. 64 characters). Or in Render click "Generate" if available. |
+   | `JWT_REFRESH_SECRET` | Another long random string (different from JWT_SECRET). Or "Generate" if available. |
+   | `CORS_ORIGIN` | `https://moviehive.com,https://www.moviehive.com` (or use your Vercel URL for now, e.g. `https://moviehive-xxx.vercel.app`) |
+   | `GOOGLE_CLIENT_ID` | Your Google OAuth Client ID from Google Cloud Console (e.g. `xxxxx.apps.googleusercontent.com`) |
+   | `GOOGLE_CLIENT_SECRET` | Your Google OAuth Client Secret from Google Cloud Console |
+   | `GOOGLE_CALLBACK_URL` | **After** you create the service, Render gives you a URL like `https://moviehive-api.onrender.com`. Then set this to: `https://moviehive-api.onrender.com/api/auth/google/callback` (replace `moviehive-api` with your actual service name if different). |
 
-6. Click **"Create Web Service"** and wait for deployment
-7. Note your Render URL: `https://moviehive-api.onrender.com`
-8. Test: visit `https://moviehive-api.onrender.com/api/health` — should return `{"status":"ok"}`
+   **Note:** If you don’t have a custom domain yet, set `CORS_ORIGIN` to your Vercel URL (you’ll get it in Step 4, e.g. `https://moviehive-abc123.vercel.app`). You can change it to `https://moviehive.com` later.
+
+6. Click **"Create Web Service"** and wait for the first deploy (can take a few minutes).
+7. Once live, your API URL will be something like `https://moviehive-api.onrender.com`. Open `https://YOUR-SERVICE-NAME.onrender.com/api/health` — you should see `{"status":"ok"}`.
+8. If you used a placeholder for `GOOGLE_CALLBACK_URL`, go to the service **Environment** tab, set `GOOGLE_CALLBACK_URL` to `https://YOUR-SERVICE-NAME.onrender.com/api/auth/google/callback`, and save (Render will redeploy).
 
 ---
 

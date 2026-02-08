@@ -1,15 +1,13 @@
 {
   "name": "stream-platform",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:web\"",
     "dev:web": "npm run dev -w @stream/web",
     "dev:server": "npm run dev -w @stream/server",
     "build": "npm run build -w @stream/shared && npm run build -w @stream/server && npm run build -w @stream/web",
+    "build:server": "npm run db:generate -w @stream/server && npx tsc -p tsconfig.server.json",
     "start": "concurrently \"npm run start -w @stream/server\" \"npm run start -w @stream/web\"",
     "db:generate": "npm run db:generate -w @stream/server",
     "db:push": "npm run db:push -w @stream/server",
@@ -18,6 +16,7 @@
     "lint": "npm run lint -w @stream/web"
   },
   "devDependencies": {
+    "@types/node": "^20.14.10",
     "concurrently": "^8.2.2"
   },
   "engines": {

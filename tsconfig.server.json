@@ -1,0 +1,9 @@
+{
+  "extends": "./apps/server/tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./apps/server/dist",
+    "rootDir": "./apps/server/src",
+    "typeRoots": ["./node_modules/@types"]
+  },
+  "include": ["./apps/server/src/**/*"]
+}
