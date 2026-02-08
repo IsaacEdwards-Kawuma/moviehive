@@ -1,15 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function NewProfilePage() {
   const router = useRouter();
+  const { user, accessToken, isHydrated } = useAuthStore();
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isHydrated && !user?.id) router.replace('/');
+  }, [isHydrated, user?.id, router]);
 
   const createMu = useMutation({
     mutationFn: () => api.profiles.create({ name: name.trim() }),
@@ -24,8 +30,20 @@ export default function NewProfilePage() {
       setError('Name is required');
       return;
     }
+    if (!accessToken) {
+      setError('Session expired. Please log in again.');
+      return;
+    }
     createMu.mutate();
   };
+
+  if (!isHydrated || !user?.id) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stream-bg">
+        <div className="w-12 h-12 border-4 border-stream-accent border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-stream-bg px-6">

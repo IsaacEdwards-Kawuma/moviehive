@@ -42,8 +42,11 @@ authRouter.post('/register', async (req, res) => {
   });
   const accessToken = signAccessToken({ userId: user.id, email: user.email });
   const refreshToken = signRefreshToken({ userId: user.id, email: user.email });
-  res.cookie('accessToken', accessToken, { httpOnly: true, maxAge: 15 * 60 * 1000, sameSite: 'lax' });
-  res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: 'lax' });
+  const cookieOpts = process.env.NODE_ENV === 'production'
+    ? { httpOnly: true, maxAge: 15 * 60 * 1000, sameSite: 'none' as const, secure: true }
+    : { httpOnly: true, maxAge: 15 * 60 * 1000, sameSite: 'lax' as const };
+  res.cookie('accessToken', accessToken, cookieOpts);
+  res.cookie('refreshToken', refreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 });
   res.status(201).json({
     user: { id: user.id, email: user.email, subscriptionTier: user.subscriptionTier, role: user.role },
     accessToken,
@@ -73,8 +76,11 @@ authRouter.post('/login', async (req, res) => {
   }
   const accessToken = signAccessToken({ userId: user.id, email: user.email });
   const refreshToken = signRefreshToken({ userId: user.id, email: user.email });
-  res.cookie('accessToken', accessToken, { httpOnly: true, maxAge: 15 * 60 * 1000, sameSite: 'lax' });
-  res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: 'lax' });
+  const cookieOpts = process.env.NODE_ENV === 'production'
+    ? { httpOnly: true, maxAge: 15 * 60 * 1000, sameSite: 'none' as const, secure: true }
+    : { httpOnly: true, maxAge: 15 * 60 * 1000, sameSite: 'lax' as const };
+  res.cookie('accessToken', accessToken, cookieOpts);
+  res.cookie('refreshToken', refreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 });
   res.json({
     user: { id: user.id, email: user.email, subscriptionTier: user.subscriptionTier, role: user.role },
     accessToken,
@@ -105,7 +111,10 @@ authRouter.post('/refresh-token', async (req, res) => {
     return;
   }
   const accessToken = signAccessToken({ userId: user.id, email: user.email });
-  res.cookie('accessToken', accessToken, { httpOnly: true, maxAge: 15 * 60 * 1000, sameSite: 'lax' });
+  const cookieOpts = process.env.NODE_ENV === 'production'
+    ? { httpOnly: true, maxAge: 15 * 60 * 1000, sameSite: 'none' as const, secure: true }
+    : { httpOnly: true, maxAge: 15 * 60 * 1000, sameSite: 'lax' as const };
+  res.cookie('accessToken', accessToken, cookieOpts);
   res.json({ accessToken, expiresIn: 900 });
 });
 
