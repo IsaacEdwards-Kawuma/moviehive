@@ -33,9 +33,9 @@ const contentCreateSchema = z.object({
   releaseYear: z.number().int().min(1900).max(2100).optional().nullable(),
   duration: z.number().int().min(0).optional().nullable(),
   rating: z.string().max(20).optional().nullable(),
-  thumbnailUrl: z.string().url().optional().nullable(),
-  posterUrl: z.string().url().optional().nullable(),
-  trailerUrl: z.string().url().optional().nullable(),
+  thumbnailUrl: z.string().optional().nullable(),
+  posterUrl: z.string().optional().nullable(),
+  trailerUrl: z.string().optional().nullable(),
   videoUrl: z.string().optional().nullable(),
   featured: z.boolean().optional(),
   genreIds: z.array(z.string().uuid()).optional(),
@@ -52,7 +52,7 @@ const episodeSchema = z.object({
   description: z.string().optional().nullable(),
   duration: z.number().int().min(0).optional().nullable(),
   videoUrl: z.string().optional().nullable(),
-  thumbnailUrl: z.string().url().optional().nullable(),
+  thumbnailUrl: z.string().optional().nullable(),
 });
 
 // Get all users (admin only)
