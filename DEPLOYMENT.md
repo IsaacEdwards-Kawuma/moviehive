@@ -97,8 +97,8 @@ Domain DNS  →  Spaceship
 2. Click **"Add New Project"** → Import your `moviehive` repo
 3. Configure:
    - **Framework Preset:** Next.js
-   - **Root Directory:** leave **empty** (do not set to `apps/web` — the repo root is required so the monorepo build can run)
-   - Build/Install are set by the root `vercel.json`: install from repo root, build shared then web, output in `apps/web/.next`
+   - **Root Directory:** set to **`apps/web`** (so Vercel detects Next.js)
+   - **Install Command:** `npm install` | **Build Command:** `cd ../.. && npm run build -w @stream/shared && cd apps/web && npm run build` | **Output Directory:** `.next`
    - Do **not** override Build Command or Install Command in the dashboard unless you know what you’re doing
 
 4. Add **Environment Variables**:
