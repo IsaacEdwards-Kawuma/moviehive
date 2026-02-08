@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  passwordHash      String?   @map("password_hash")
+  googleId          String?   @unique @map("google_id")
+  avatarUrl         String?   @map("avatar_url")
+  role              String   @default("USER") 
+  subscriptionTier  String    @default("free") @map("subscription_tier")
+  emailVerified     Boolean   @default(false) @map("email_verified")
+  twoFactorEnabled  Boolean   @default(false) @map("two_factor_enabled")
+  twoFactorSecret   String?   @map("two_factor_secret")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  profiles      Profile[]
+  sessions      Session[]
+  notifications Notification[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  device    String?
+  ip        String?
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Profile {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String
+  avatar      String?
+  isKids      Boolean  @default(false) @map("is_kids")
+  language    String   @default("en")
+  pin         String?  @map("pin")
+  colorTheme  String?  @map("color_theme")
+  maturityLevel String? @map("maturity_level")
+  autoplayNext Boolean @default(true) @map("autoplay_next")
+  autoplayPreviews Boolean @default(true) @map("autoplay_previews")
+  dataUsage   String   @default("medium") @map("data_usage")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  watchHistory WatchHistory[]
+  myListItems  MyListItem[]
+  ratings      Rating[]
+
+  @@index([userId])
+}
+
+model Content {
+  id           String    @id @default(uuid())
+  type         String    // movie | series
+  title        String
+  description  String?
+  releaseYear  Int?      @map("release_year")
+  duration     Int?      @map("duration") // minutes
+  rating       String?   @map("rating")   // PG-13, R, etc.
+  imdbId       String?   @map("imdb_id")
+  tmdbId       Int?      @map("tmdb_id")
+  featured     Boolean   @default(false)
+  thumbnailUrl String?   @map("thumbnail_url")
+  posterUrl    String?   @map("poster_url")
+  trailerUrl   String?   @map("trailer_url")
+  videoUrl     String?   @map("video_url") // for movies
+  languages    String[]  @default([])
+  regions      String[]  @default([])
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  episodes     Episode[]
+  contentGenres ContentGenre[]
+  watchHistory WatchHistory[]
+  myListItems  MyListItem[]
+  ratings      Rating[]
+  cast         CastMember[]
+  collections  CollectionItem[]
+
+  @@index([type])
+  @@index([featured])
+  @@index([releaseYear])
+  @@index([createdAt])
+}
+
+model Episode {
+  id           String    @id @default(uuid())
+  seriesId     String    @map("series_id")
+  season       Int
+  episode      Int
+  title        String?
+  description  String?
+  duration     Int?
+  videoUrl     String?   @map("video_url")
+  thumbnailUrl String?   @map("thumbnail_url")
+  releaseDate  DateTime? @map("release_date")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  series       Content   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  watchHistory WatchHistory[]
+
+  @@unique([seriesId, season, episode])
+  @@index([seriesId])
+}
+
+model Genre {
+  id   String @id @default(uuid())
+  name String @unique
+  slug String @unique
+
+  contentGenres ContentGenre[]
+}
+
+model ContentGenre {
+  contentId String
+  genreId   String @map("genre_id")
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  genre   Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([contentId, genreId])
+  @@index([genreId])
+}
+
+model CastMember {
+  id         String  @id @default(uuid())
+  contentId  String  @map("content_id")
+  name       String
+  role       String  // actor | director | writer
+  character  String? // for actors
+  order      Int     @default(0)
+  imageUrl   String? @map("image_url")
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([contentId])
+}
+
+model Collection {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  posterUrl   String?  @map("poster_url")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  items CollectionItem[]
+}
+
+model CollectionItem {
+  collectionId String @map("collection_id")
+  contentId    String @map("content_id")
+  order        Int    @default(0)
+  addedAt      DateTime @default(now()) @map("added_at")
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  content    Content    @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, contentId])
+}
+
+model WatchHistory {
+  id         String   @id @default(uuid())
+  profileId  String   @map("profile_id")
+  contentId  String   @map("content_id")
+  episodeId  String?  @map("episode_id")
+  progress   Int      @default(0) // seconds
+  completed  Boolean  @default(false)
+  watchedAt  DateTime @default(now()) @map("watched_at")
+
+  profile Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  content Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  episode Episode? @relation(fields: [episodeId], references: [id], onDelete: SetNull)
+
+  @@index([profileId])
+  @@index([contentId])
+  @@index([profileId, contentId])
+}
+
+model MyListItem {
+  profileId String   @map("profile_id")
+  contentId String   @map("content_id")
+  addedAt   DateTime @default(now()) @map("added_at")
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, contentId])
+  @@index([profileId])
+}
+
+model Rating {
+  profileId String   @map("profile_id")
+  contentId String   @map("content_id")
+  rating    Int      // 1-5 thumbs or 1-10
+  thumbsUp  Boolean? @map("thumbs_up") // optional thumbs up/down
+  ratedAt   DateTime @default(now()) @map("rated_at")
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, contentId])
+  @@index([contentId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String   // new_release | new_episode | recommendation | account
+  title     String
+  body      String?
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model SearchHistory {
+  id        String   @id @default(uuid())
+  profileId String?  @map("profile_id")
+  query     String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([profileId])
+  @@index([createdAt])
+}

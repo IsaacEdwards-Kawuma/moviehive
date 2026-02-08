@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: moviehive-api
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run db:generate && npm run build -w @stream/shared && npm run build -w @stream/server
+    startCommand: npm run db:push -w @stream/server && npm run start -w @stream/server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CALLBACK_URL
+        sync: false
+    healthCheckPath: /api/health
+    autoDeploy: true
