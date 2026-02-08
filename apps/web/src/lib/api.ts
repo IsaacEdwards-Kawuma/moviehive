@@ -270,7 +270,7 @@ export type Content = {
   thumbnailUrl: string | null;
   posterUrl: string | null;
   featured: boolean;
-  contentGenres?: Array<{ genre: { name: string; slug: string } }>;
+  contentGenres?: Array<{ genre: { id: string; name: string; slug: string } }>;
 };
 
 export type ContentDetail = Content & {
