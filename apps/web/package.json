@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@stream/shared": "*",
     "@tanstack/react-query": "^5.59.0",
     "framer-motion": "^11.11.0",
     "hls.js": "^1.6.15",
