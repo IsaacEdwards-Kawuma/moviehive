@@ -67,7 +67,9 @@ Domain DNS  →  Spaceship
      ```
    - **Plan:** Free
 
-5. **Environment Variables** — scroll to the **"Environment"** or **"Environment Variables"** section, click **"Add Environment Variable"**, and add these **one by one** (Key = name, Value = value):
+5. **Environment Variables** — scroll to **"Environment"** / **"Environment Variables"**:
+   - **Option A (Import from .env):** Click **"Add from .env"** or **"Import"**, then paste the contents of your local `env.render.txt` (in the project root). Fill it with your real values; the file is gitignored so it never gets committed. One paste adds all variables.
+   - **Option B (manual):** Add each variable **one by one** (Key = name, Value = value):
 
    | Key | Value (paste or type) |
    |-----|----------------------|
@@ -95,12 +97,13 @@ Domain DNS  →  Spaceship
 2. Click **"Add New Project"** → Import your `moviehive` repo
 3. Configure:
    - **Framework Preset:** Next.js
-   - **Root Directory:** `apps/web`
-   - **Build Command:** `cd ../.. && npm install && npm run build -w @stream/shared && cd apps/web && npm run build`
-   - **Install Command:** `cd ../.. && npm install`
-   - **Output Directory:** `.next`
+   - **Root Directory:** leave **empty** (do not set to `apps/web` — the repo root is required so the monorepo build can run)
+   - Build/Install are set by the root `vercel.json`: install from repo root, build shared then web, output in `apps/web/.next`
+   - Do **not** override Build Command or Install Command in the dashboard unless you know what you’re doing
 
 4. Add **Environment Variables**:
+   - **Import from .env:** In **Settings → Environment Variables**, click **"Import from .env"** and paste the contents of `env.vercel.example` (or a file with just `NEXT_PUBLIC_API_URL=https://YOUR-RENDER-URL.onrender.com/api`). Replace the URL with your real Render API URL.
+   - Or add manually:
 
    | Key | Value |
    |-----|-------|
