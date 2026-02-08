@@ -97,10 +97,10 @@ Domain DNS  →  Spaceship
 2. Click **"Add New Project"** → Import your `moviehive` repo
 3. Configure:
    - **Framework Preset:** Next.js
-   - **Root Directory:** set to **`apps/web`** (so Vercel detects Next.js)
-   - **Install Command:** `npm install`
-   - **Build Command:** `cd ../.. && npm run build -w @stream/shared && cd apps/web && npm run build`
-   - **Output Directory:** `.next`
+   - **Root Directory:** leave **empty** (repo root; root `package.json` has `next` in dependencies so Vercel detects Next.js)
+   - **Install Command:** `npm install` (set by root `vercel.json`)
+   - **Build Command:** `npm run build -w @stream/shared && npm run build -w @stream/web` (set by root `vercel.json`)
+   - **Output Directory:** `apps/web/.next` (set by root `vercel.json`)
 
 4. Add **Environment Variables**:
    - **Import from .env:** In **Settings → Environment Variables**, click **"Import from .env"** and paste the contents of `env.vercel.example` (or a file with just `NEXT_PUBLIC_API_URL=https://YOUR-RENDER-URL.onrender.com/api`). Replace the URL with your real Render API URL.
