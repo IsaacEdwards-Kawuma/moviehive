@@ -26,10 +26,11 @@ export default function WatchPage() {
   const [offlineUrl, setOfflineUrl] = useState<string | null>(null);
   const [offlineChecked, setOfflineChecked] = useState(false);
 
-  const { data: streamData, isLoading } = useQuery({
+  const { data: streamData, isLoading, isError: isStreamError, error: streamError } = useQuery({
     queryKey: ['stream', contentId, episodeId],
     queryFn: () => api.stream.getUrl(contentId, episodeId),
     enabled: !!contentId && !offlineOnly,
+    retry: 1,
   });
 
   const { data: contentDetail } = useQuery({
@@ -112,10 +113,14 @@ export default function WatchPage() {
     return () => clearTimeout(uiTimeoutRef.current);
   }, [resetUITimeout]);
 
-  const videoSrc = offlineUrl ?? (!offlineOnly ? streamData?.url : null);
+  const streamUrl = streamData?.url;
+  const isImageUrl =
+    typeof streamUrl === 'string' && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(streamUrl);
+  const videoSrc = offlineUrl ?? (!offlineOnly && streamUrl && !isImageUrl ? streamUrl : null);
   const waitingForOffline = offlineOnly && !offlineChecked;
   const offlineNotFound = offlineOnly && offlineChecked && !offlineUrl;
-  const waitingForStream = !offlineOnly && !offlineUrl && (isLoading || !streamData?.url);
+  const waitingForStream =
+    !offlineOnly && !offlineUrl && !isStreamError && (isLoading || !streamData?.url);
 
   if (waitingForOffline || waitingForStream) {
     return (
@@ -156,6 +161,69 @@ export default function WatchPage() {
             className="inline-flex items-center gap-2 bg-stream-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors"
           >
             Go to title
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (isStreamError) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center max-w-md"
+        >
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full glass flex items-center justify-center">
+            <svg className="w-8 h-8 text-stream-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-bold mb-2">Couldn’t load video</h1>
+          <p className="text-stream-text-secondary mb-6">
+            {streamError instanceof Error ? streamError.message : 'Check your connection and try again.'}
+          </p>
+          <Link
+            href={`/title/${contentId}`}
+            className="inline-flex items-center gap-2 bg-stream-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors"
+          >
+            Back to title
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (isImageUrl) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center max-w-md"
+        >
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full glass flex items-center justify-center">
+            <svg className="w-8 h-8 text-stream-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-bold mb-2">Video URL is an image</h1>
+          <p className="text-stream-text-secondary mb-6">
+            This title’s Video URL points to an image (e.g. .jpg). That causes loading issues. In Admin, set the
+            <strong> Video URL</strong> to a direct video link (MP4 or WebM), not a poster or thumbnail.
+          </p>
+          <Link
+            href={`/title/${contentId}`}
+            className="inline-flex items-center gap-2 bg-stream-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors"
+          >
+            Back to title
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
