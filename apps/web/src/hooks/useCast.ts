@@ -25,7 +25,7 @@ export function useCast() {
       try {
         const cast = window.cast;
         const chromeCast = window.chrome?.cast;
-        if (!cast?.framework?.CastContext || !chromeCast?.cast?.media) return;
+        if (!cast?.framework?.CastContext || !chromeCast?.media) return;
 
         const context = cast.framework.CastContext.getInstance();
         context.setOptions({
