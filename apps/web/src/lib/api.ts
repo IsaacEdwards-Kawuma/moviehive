@@ -1,12 +1,11 @@
 const RENDER_API_BASE = 'https://moviehive-api.onrender.com/api';
 
+/** API base URL: use env on Vercel/production, fallback to Render URL when on *.vercel.app, else /api/server for local dev. */
 function getApiBase(): string {
   const env = process.env.NEXT_PUBLIC_API_URL;
-  if (typeof window !== 'undefined') {
-    if (env && env.startsWith('http') && !env.includes('vercel.app')) return env;
-    if (window.location.origin.includes('vercel.app')) return RENDER_API_BASE;
-  }
-  return env ?? '/api/server';
+  if (env && env.startsWith('http')) return env;
+  if (typeof window !== 'undefined' && window.location.origin.includes('vercel.app')) return RENDER_API_BASE;
+  return '/api/server';
 }
 
 let getAccessToken: (() => string | null) | null = null;
@@ -206,6 +205,8 @@ export const api = {
     updateEpisode: (id: string, body: Partial<AdminEpisodeCreate>) => request<AdminEpisode>(`/admin/episodes/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
     deleteEpisode: (id: string) => request(`/admin/episodes/${id}`, { method: 'DELETE' }),
     getGenres: () => request<Array<{ id: string; name: string; slug: string }>>('/admin/genres'),
+    ensureDefaultGenres: () =>
+      request<Array<{ id: string; name: string; slug: string }>>('/admin/genres/ensure-defaults', { method: 'POST' }),
     getAnalytics: () => request<AdminAnalytics>('/admin/analytics'),
   },
 };

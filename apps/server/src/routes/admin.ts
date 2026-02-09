@@ -319,6 +319,29 @@ router.get('/genres', requireAuth, requireAdmin, async (_req, res) => {
   }
 });
 
+/** Ensure default genres exist (for production when seed wasn't run). Idempotent. */
+const DEFAULT_GENRES = [
+  'Action', 'Adventure', 'Animation', 'Comedy', 'Crime', 'Documentary',
+  'Drama', 'Family', 'Fantasy', 'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Thriller',
+];
+
+router.post('/genres/ensure-defaults', requireAuth, requireAdmin, async (_req, res) => {
+  try {
+    for (const name of DEFAULT_GENRES) {
+      const slug = name.toLowerCase().replace(/\s+/g, '-');
+      const existing = await prisma.genre.findUnique({ where: { slug } });
+      if (!existing) {
+        await prisma.genre.create({ data: { name, slug } });
+      }
+    }
+    const genres = await prisma.genre.findMany({ orderBy: { name: 'asc' } });
+    res.json(genres);
+  } catch (error) {
+    console.error('Failed to ensure default genres:', error);
+    res.status(500).json({ message: 'Failed to ensure default genres' });
+  }
+});
+
 // ---------- Analytics / monitoring (admin only) ----------
 
 router.get('/analytics', requireAuth, requireAdmin, async (_req, res) => {

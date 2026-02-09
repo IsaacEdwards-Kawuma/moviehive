@@ -10,7 +10,9 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:clean": "node -e \"try{require('fs').rmSync('node_modules/.prisma',{recursive:true,force:true});}catch(e){console.error('Close dev server and Node processes first');process.exit(1);}\"",
+    "db:generate:clean": "npm run db:clean && prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

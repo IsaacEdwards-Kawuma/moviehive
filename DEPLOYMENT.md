@@ -26,7 +26,25 @@ Domain DNS  →  Spaceship
 
 ---
 
-## Step 2: Push Code to GitHub
+## Deploy the latest (after you’ve already set up Vercel + Render)
+
+Once the repo is connected to Vercel and Render, deploying your latest code is:
+
+1. **Push to GitHub** (from your project folder):
+   ```bash
+   cd "c:\Users\kasac\Desktop\all stuf\CODES\Stream Website"
+   git add .
+   git commit -m "Your short message (e.g. Add default genres for admin)"
+   git push origin main
+   ```
+2. **Frontend (Vercel)** — usually deploys automatically when you push `main`. To force a new deploy: [vercel.com](https://vercel.com) → your project → **Deployments** → **Redeploy** on the latest, or push a new commit.
+3. **Backend (Render)** — usually deploys automatically when you push `main`. To force a new deploy: [render.com](https://render.com) → your **moviehive-api** service → **Manual Deploy** → **Deploy latest commit**.
+
+Wait a few minutes for both to finish. Then test the live site and API.
+
+---
+
+## Step 2: Push Code to GitHub (first-time only)
 
 1. Create a new repository on [GitHub](https://github.com/new)
    - Name: `moviehive` (or anything you like)
@@ -199,6 +217,47 @@ Option B — Connect from local:
 
 ---
 
+## Local vs production: how it’s wired
+
+| | Local | Production (web) |
+|---|--------|------------------|
+| **Frontend** | `http://localhost:3000` (or Next.js dev) | Vercel: `https://moviehive.com` or `https://xxx.vercel.app` |
+| **Backend API** | `http://localhost:4000` | Render: `https://moviehive-api.onrender.com` |
+| **How frontend finds API** | Uses `/api/server` → Next.js rewrites to `localhost:4000` (see `next.config.js`) | Uses `NEXT_PUBLIC_API_URL` set on Vercel (e.g. `https://moviehive-api.onrender.com/api`). If unset and on `*.vercel.app`, falls back to hardcoded Render URL. |
+| **Auth cookies** | `sameSite: 'lax'`, `httpOnly` | `sameSite: 'none'`, `secure: true` so cookies work cross-origin (Vercel ↔ Render). |
+| **CORS** | Allows `http://localhost:3000` | Render `CORS_ORIGIN` must list your frontend origin(s), e.g. `https://moviehive.com,https://www.moviehive.com` or your Vercel URL. |
+
+**If the site works locally but not on the web:**
+
+1. **Vercel env** – In Vercel → Project → Settings → Environment Variables, add:
+   - `NEXT_PUBLIC_API_URL` = `https://moviehive-api.onrender.com/api` (or your real Render API URL; no trailing slash except `/api`).
+   - Redeploy after changing env.
+2. **Render CORS** – In Render → Service → Environment, set:
+   - `CORS_ORIGIN` = your frontend URL(s), e.g. `https://moviehive.com,https://www.moviehive.com` or `https://your-app.vercel.app`.
+3. **Cold start** – On Render free tier the service sleeps; the first request after 15 min can take ~30 s. Refresh or wait and try again.
+
+---
+
+## Video playback on production
+
+**Why video works locally but not on the web**
+
+- **Locally:** Uploaded videos are saved to your machine (e.g. `apps/server/uploads/videos/`). The stream URL points to `http://localhost:4000/uploads/videos/xxx.mp4`, which is served from that folder.
+- **On Render:** The filesystem is **ephemeral**. Any file you upload is lost on the next deploy or when the service restarts. So `/uploads/videos/xxx.mp4` either never exists or disappears, and playback fails (404 or “format not supported” when the response isn’t a valid video).
+
+**How to have working video on the web**
+
+1. **Use a full video URL (recommended)**  
+   Don’t upload the file to the backend. Host the video elsewhere and paste the link when adding content:
+   - **Cloudinary** (free tier): upload at [cloudinary.com](https://cloudinary.com), get a URL like `https://res.cloudinary.com/your-cloud/video/upload/xxx.mp4`.
+   - **AWS S3 / R2 / Backblaze B2**: make the file public or use a signed URL and put that in **Video URL** in the admin form.
+   - In Admin → Content → Add/Edit content, leave “Video file” empty and paste the full URL in **“Or paste video URL”** (or the Video URL field). The app stores that URL and plays it as-is.
+
+2. **Optional: Cloud storage from admin**  
+   You can later add an upload flow that sends files from the browser to Cloudinary/S3 and then saves the returned URL into your content. The current “upload video” in admin saves to the server disk, which is only suitable for local use.
+
+---
+
 ## Troubleshooting
 
 - **CORS errors:** Make sure `CORS_ORIGIN` on Render includes your exact frontend domain
@@ -206,3 +265,14 @@ Option B — Connect from local:
 - **Database connection fails:** Check the Neon connection string includes `?sslmode=require`
 - **Build fails on Vercel:** Ensure root directory is set to `apps/web`
 - **Free tier cold starts:** Render free tier sleeps after 15min of inactivity — first request takes ~30s
+
+### Browser console: font preload, cookies, OpaqueResponseBlocking
+
+- **“Preloaded with link preload was not used within a few seconds”**  
+  The app uses `next/font` with the font applied on `<body>`. If you still see this, it’s often a timing quirk in dev or on Vercel previews and can be ignored, or try a hard refresh.
+
+- **“Cookie __Secure-YENID / __Secure-YEC has been rejected (cross-site, SameSite Lax/Strict)”**  
+  These cookies are from **Vercel** (e.g. Analytics or Speed Insights), not from your app. They are set with SameSite=Lax/Strict, so the browser rejects them in cross-site contexts (e.g. if the page is embedded or opened in a different frame). You can ignore these, or disable Vercel Analytics/Speed Insights in the Vercel project settings if you don’t need them.
+
+- **“A resource is blocked by OpaqueResponseBlocking”**  
+  This usually means a request was made with `fetch(..., { mode: 'no-cors' })` and the response was used in a way that’s blocked. This app does not use `no-cors` for its own requests. If you see it, it may come from a browser extension or a third-party script. Check the console/Network tab for the exact blocked URL.

@@ -7,6 +7,7 @@ const inter = Inter({
   subsets: ['latin'],
   variable: '--font-netflix',
   display: 'swap',
+  preload: true, // keep preload so the preloaded font is used immediately and the warning goes away
 });
 
 export const metadata: Metadata = {
@@ -21,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="min-h-screen bg-stream-bg text-stream-text-primary antialiased">
+      <body className={`min-h-screen bg-stream-bg text-stream-text-primary antialiased ${inter.className}`}>
         <Providers>{children}</Providers>
       </body>
     </html>

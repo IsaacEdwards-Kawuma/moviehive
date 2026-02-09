@@ -18,6 +18,9 @@ export function AdminContentForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [genres, setGenres] = useState<Array<{ id: string; name: string; slug: string }>>([]);
+  const [genresLoading, setGenresLoading] = useState(true);
+  const [genresError, setGenresError] = useState('');
+  const [genresEnsuring, setGenresEnsuring] = useState(false);
   const [detail, setDetail] = useState<AdminContentDetail | null>(null);
   const [form, setForm] = useState<AdminContentCreate>({
     type: 'movie',
@@ -47,7 +50,13 @@ export function AdminContentForm({
   const [addingEpisode, setAddingEpisode] = useState(false);
 
   useEffect(() => {
-    api.admin.getGenres().then(setGenres);
+    setGenresLoading(true);
+    setGenresError('');
+    api.admin
+      .getGenres()
+      .then(setGenres)
+      .catch(() => setGenresError('Could not load genres. Make sure you are logged in as admin and the database seed has been run (npm run db:seed).'))
+      .finally(() => setGenresLoading(false));
   }, []);
 
   useEffect(() => {
@@ -201,6 +210,68 @@ export function AdminContentForm({
               className="w-full bg-stream-black border border-stream-gray rounded px-3 py-2 text-white"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-stream-text-secondary mb-2">Genres</label>
+            <p className="text-xs text-stream-text-secondary mb-2">Select all that apply (tick the genres this movie or series belongs to)</p>
+            {genresLoading ? (
+              <p className="text-stream-text-secondary text-sm">Loading genres…</p>
+            ) : genresError ? (
+              <p className="text-stream-accent text-sm">{genresError}</p>
+            ) : genres.length === 0 ? (
+              <div className="space-y-2">
+                <p className="text-amber-500 text-sm">No genres yet. Load the default list so you can tick genres when adding content.</p>
+                <button
+                  type="button"
+                  disabled={genresEnsuring}
+                  onClick={async () => {
+                    setGenresEnsuring(true);
+                    setGenresError('');
+                    try {
+                      const list = await api.admin.ensureDefaultGenres();
+                      setGenres(list);
+                    } catch (e) {
+                      setGenresError(e instanceof Error ? e.message : 'Failed to load default genres');
+                    } finally {
+                      setGenresEnsuring(false);
+                    }
+                  }}
+                  className="bg-stream-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 disabled:opacity-50"
+                >
+                  {genresEnsuring ? 'Loading…' : 'Load default genres'}
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {genres.map((g) => {
+                  const isChecked = form.genreIds?.includes(g.id) ?? false;
+                  return (
+                    <label
+                      key={g.id}
+                      className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                        isChecked
+                          ? 'bg-stream-accent/20 border-stream-accent text-white'
+                          : 'bg-stream-black border-stream-gray text-stream-text-secondary hover:border-stream-text-secondary'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            genreIds: e.target.checked ? [...(f.genreIds ?? []), g.id] : (f.genreIds ?? []).filter((id) => id !== g.id),
+                          }))
+                        }
+                        className="sr-only"
+                      />
+                      <span className="text-sm font-medium">{g.name}</span>
+                      {isChecked && <span className="text-stream-accent" aria-hidden>✓</span>}
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
           <FileUpload
             type="image"
             label="Thumbnail"
@@ -219,27 +290,6 @@ export function AdminContentForm({
             currentUrl={form.videoUrl ?? null}
             onUploaded={(url) => setForm((f) => ({ ...f, videoUrl: url || null }))}
           />
-          <div>
-            <label className="block text-sm text-stream-text-secondary mb-1">Genres</label>
-            <div className="flex flex-wrap gap-2">
-              {genres.map((g) => (
-                <label key={g.id} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.genreIds?.includes(g.id) ?? false}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        genreIds: e.target.checked ? [...(f.genreIds ?? []), g.id] : (f.genreIds ?? []).filter((id) => id !== g.id),
-                      }))
-                    }
-                    className="rounded"
-                  />
-                  <span className="text-sm">{g.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"

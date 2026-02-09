@@ -42,12 +42,26 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 
-// Serve uploaded files
+// MIME types for video so browsers can play them (MP4/WebM are widely supported)
+const VIDEO_MIME: Record<string, string> = {
+  '.mp4': 'video/mp4',
+  '.m4v': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mkv': 'video/x-matroska',
+  '.mov': 'video/quicktime',
+  '.avi': 'video/x-msvideo',
+};
+
+// Serve uploaded files with correct headers for streaming
 app.use('/uploads', express.static(UPLOAD_DIR, {
   maxAge: '7d',
   setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.mp4') || filePath.endsWith('.webm') || filePath.endsWith('.mkv')) {
+    const ext = path.extname(filePath).toLowerCase();
+    const mime = VIDEO_MIME[ext];
+    if (mime) {
+      res.setHeader('Content-Type', mime);
       res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Access-Control-Allow-Origin', '*'); // allow video to be played from any frontend origin
     }
   },
 }));

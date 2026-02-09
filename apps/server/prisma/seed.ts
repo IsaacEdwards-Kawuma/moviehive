@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Create Admin User
+  // Create or ensure Admin User has role ADMIN
   const adminExists = await prisma.user.findUnique({ where: { email: 'admin@stream.com' } });
   if (!adminExists) {
     const adminUser = await prisma.user.create({
@@ -16,7 +16,11 @@ async function main() {
     });
     console.log('Created admin:', adminUser.email, '/ password: admin123');
   } else {
-    console.log('Admin already exists');
+    await prisma.user.update({
+      where: { email: 'admin@stream.com' },
+      data: { role: 'ADMIN' },
+    });
+    console.log('Admin already exists; ensured role is ADMIN');
   }
 
   const genres = [
