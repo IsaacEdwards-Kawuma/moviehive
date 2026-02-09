@@ -272,6 +272,9 @@ So: different users on different devices, and the same user on different devices
 
 ## Troubleshooting
 
+- **"Too many requests" when logging in**  
+  The API rate-limits requests per IP (default 500 per 15 minutes). For many users, set a higher limit on Render: **Environment** → add `RATE_LIMIT_MAX` = `2000` or `3000`. Redeploy after changing. Trade-off: higher values give more headroom for real traffic but less protection against a single abusive IP; 2000–3000 is usually fine for a growing app.
+
 - **CORS errors:** Make sure `CORS_ORIGIN` on Render includes your exact frontend domain
 - **Google OAuth fails:** Ensure the callback URL in Google Console matches `GOOGLE_CALLBACK_URL` exactly
 - **Database connection fails:** Check the Neon connection string includes `?sslmode=require`

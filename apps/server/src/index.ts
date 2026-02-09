@@ -66,10 +66,15 @@ app.use('/uploads', express.static(UPLOAD_DIR, {
   },
 }));
 
+// Rate limit per IP per 15 min. Set RATE_LIMIT_MAX (e.g. 2000–3000) for many users; higher = more headroom but less protection against abuse.
+const rateLimitWindowMs = 15 * 60 * 1000; // 15 min
+const rateLimitMax = Math.max(200, parseInt(process.env.RATE_LIMIT_MAX ?? '500', 10) || 500);
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200,
-  message: { error: 'Too many requests' },
+  windowMs: rateLimitWindowMs,
+  max: rateLimitMax,
+  message: { error: 'Too many requests. Please try again in a few minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use('/api/', limiter);
 
