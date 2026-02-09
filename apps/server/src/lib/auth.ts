@@ -13,6 +13,13 @@ export interface JwtPayload {
   type: 'access' | 'refresh';
 }
 
+export interface StreamProxyPayload {
+  contentId: string;
+  episodeId?: string;
+  userId: string;
+  type: 'stream-proxy';
+}
+
 export function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
 }
@@ -50,6 +57,25 @@ export function verifyRefreshToken(token: string): JwtPayload | null {
   try {
     const decoded = jwt.verify(token, JWT_REFRESH_SECRET) as JwtPayload;
     return decoded?.type === 'refresh' ? decoded : null;
+  } catch {
+    return null;
+  }
+}
+
+const STREAM_PROXY_EXPIRY = '1h';
+
+export function signStreamProxyToken(payload: { contentId: string; episodeId?: string; userId: string }): string {
+  return jwt.sign(
+    { ...payload, type: 'stream-proxy' } as StreamProxyPayload,
+    JWT_SECRET,
+    { expiresIn: STREAM_PROXY_EXPIRY }
+  );
+}
+
+export function verifyStreamProxyToken(token: string): StreamProxyPayload | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as StreamProxyPayload;
+    return decoded?.type === 'stream-proxy' ? decoded : null;
   } catch {
     return null;
   }

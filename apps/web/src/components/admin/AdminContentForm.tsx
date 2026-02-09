@@ -286,11 +286,13 @@ export function AdminContentForm({
           />
           <FileUpload
             type="video"
-            label="Video file (movie or first episode)"
+            label="Video (movie or first episode)"
             currentUrl={form.videoUrl ?? null}
             onUploaded={(url) => setForm((f) => ({ ...f, videoUrl: url || null }))}
           />
-          <p className="text-xs text-stream-text-secondary -mt-2">Use a direct MP4/WebM URL (e.g. Cloudinary). Do not paste YouTube or image links here—use those only for Trailer or Poster.</p>
+          <p className="text-xs text-stream-text-secondary -mt-2">
+            <strong>Both options work:</strong> (1) <strong>Upload</strong> — stores on the server; works locally, but on production (Render) files are temporary. (2) <strong>Paste URL</strong> — use a direct MP4/WebM link (e.g. Bunny, Cloudinary); works on web and is streamed through the app. You can mix: some titles with uploaded video (local), some with pasted URL (web). Do not use YouTube or image links here—only for Trailer or Poster.
+          </p>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -352,7 +354,7 @@ export function AdminContentForm({
               />
               <FileUpload
                 type="video"
-                label="Episode video"
+                label="Episode video (upload or paste URL)"
                 currentUrl={episodeForm.videoUrl ?? null}
                 onUploaded={(url) => setEpisodeForm((f) => ({ ...f, videoUrl: url || null }))}
               />

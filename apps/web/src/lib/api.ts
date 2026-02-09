@@ -182,7 +182,7 @@ export const api = {
   },
   stream: {
     getUrl: (contentId: string, episodeId?: string) =>
-      request<{ url: string; type: string }>(
+      request<{ url: string; proxyUrl?: string; type: string }>(
         `/stream/${contentId}/url${episodeId ? `?episodeId=${episodeId}` : ''}`
       ),
     getEpisodeUrl: (episodeId: string) =>

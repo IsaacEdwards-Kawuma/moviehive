@@ -113,9 +113,9 @@ export default function WatchPage() {
     return () => clearTimeout(uiTimeoutRef.current);
   }, [resetUITimeout]);
 
-  const streamUrl = streamData?.url;
+  const streamUrl = streamData?.proxyUrl ?? streamData?.url;
   const isImageUrl =
-    typeof streamUrl === 'string' && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(streamUrl);
+    typeof streamData?.url === 'string' && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(streamData.url);
   const videoSrc = offlineUrl ?? (!offlineOnly && streamUrl && !isImageUrl ? streamUrl : null);
   const waitingForOffline = offlineOnly && !offlineChecked;
   const offlineNotFound = offlineOnly && offlineChecked && !offlineUrl;

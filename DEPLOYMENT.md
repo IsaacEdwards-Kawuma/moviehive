@@ -262,6 +262,11 @@ So: different users on different devices, and the same user on different devices
 - **Locally:** Uploaded videos are saved to your machine (e.g. `apps/server/uploads/videos/`). The stream URL points to `http://localhost:4000/uploads/videos/xxx.mp4`, which is served from that folder.
 - **On Render:** The filesystem is **ephemeral**. Any file you upload is lost on the next deploy or when the service restarts. So `/uploads/videos/xxx.mp4` either never exists or disappears, and playback fails (404 or “format not supported” when the response isn’t a valid video).
 
+**Video proxy (so it works on the web without CORS hassle)**  
+When you use an **external** video URL (Bunny, ImageKit, Cloudinary), the app streams it **through your backend**. The browser loads the video from your API, and the API fetches from Bunny/ImageKit and pipes it through. So the browser never talks to the external host — **no CORS setup needed** on Bunny/ImageKit. You still paste the same Video URL in Admin; playback on the web should just work.
+
+**Both options are supported at once:** You can have some titles with an **uploaded** video (stored on the server; best for local use, since production server storage is temporary) and others with a **pasted URL** (Bunny, Cloudinary, etc.; best for web). The app uses the proxy only for external URLs; server paths are served directly.
+
 **How to have working video on the web**
 
 1. **Use a full video URL (recommended)**  
