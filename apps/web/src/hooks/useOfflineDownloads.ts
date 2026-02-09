@@ -122,7 +122,7 @@ export function useOfflineDownloads() {
         }
 
         setProgress((p) => (p ? { ...p, status: 'saving', percent: 99 } : null));
-        const blob = new Blob(chunks, { type: res.headers.get('Content-Type') || 'video/mp4' });
+        const blob = new Blob(chunks as BlobPart[], { type: res.headers.get('Content-Type') || 'video/mp4' });
         await saveDownload(contentId, episodeId, {
           title,
           posterUrl: posterUrl ?? null,
