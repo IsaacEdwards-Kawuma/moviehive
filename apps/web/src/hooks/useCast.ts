@@ -96,7 +96,8 @@ export function useCast() {
         };
       }
 
-      const request = new chromeCast.media.LoadRequest(mediaInfo);
+      const request = new chromeCast.media.LoadRequest();
+      request.media = mediaInfo;
       request.autoplay = true;
       request.currentTime = currentTime;
 
