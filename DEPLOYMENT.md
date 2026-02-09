@@ -167,14 +167,19 @@ Wait a few minutes for both to finish. Then test the live site and API.
 
 ## Step 7: Update Google OAuth for Production
 
+**Sign in or sign up with Google:** The same button works for both. New users get an account and a default profile automatically.
+
 1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
 2. Click on your OAuth client
 3. Add to **Authorized JavaScript origins:**
    - `https://moviehive.com`
    - `https://www.moviehive.com`
+   - If you use a Vercel preview URL for the app, add it too (e.g. `https://moviehive-xxx.vercel.app`)
 4. Add to **Authorized redirect URIs:**
-   - `https://moviehive-api.onrender.com/api/auth/google/callback`
+   - `https://moviehive-api.onrender.com/api/auth/google/callback` (use your actual Render API host)
 5. Save
+
+When the frontend is on a Vercel URL (`CORS_ORIGIN` contains `vercel.app`), the backend does not set a cookie domain so redirect and token-in-URL auth work correctly. For a custom domain, you can set `COOKIE_DOMAIN` (e.g. `.moviehive.com`) on the server if you want cookies to apply across subdomains.
 
 ---
 

@@ -135,12 +135,16 @@ googleAuthRouter.get('/google/callback', async (req, res) => {
     const accessToken = signAccessToken({ userId: user.id, email: user.email });
     const refreshToken = signRefreshToken({ userId: user.id, email: user.email });
 
-    // Set cookies (secure in production)
+    // Set cookies (secure in production). Don't set domain when frontend is on Vercel (e.g. *.vercel.app).
+    const cookieDomain =
+      IS_PRODUCTION && !FRONTEND_URL.includes('vercel.app')
+        ? (process.env.COOKIE_DOMAIN ?? '.moviehive.com')
+        : undefined;
     const cookieOpts = {
       httpOnly: true,
       sameSite: 'lax' as const,
       secure: IS_PRODUCTION,
-      domain: IS_PRODUCTION ? '.moviehive.com' : undefined,
+      domain: cookieDomain,
     };
     res.cookie('accessToken', accessToken, { ...cookieOpts, maxAge: 15 * 60 * 1000 });
     res.cookie('refreshToken', refreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 });
