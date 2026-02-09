@@ -168,25 +168,21 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded }: VideoPlayerProps) {
           if (!res.ok) {
             if (res.status === 404) {
               setCheckingUrl(false);
-              setError('Video not found (404). On production, use a video URL from Cloudinary or similar—server uploads are not stored.');
-            } else if (res.status !== 405) {
-              setCheckingUrl(false);
-              setError(`Video unavailable (${res.status}). Use a direct video URL (e.g. MP4 from Cloudinary).`);
-            } else {
-              runLoad(); // 405 Method Not Allowed — server may not support HEAD, try loading
+              setError(
+                'Video not found (404). On production, use a video URL from Cloudinary or similar—server uploads are not stored.'
+              );
+              return;
             }
+            // For other statuses (403, 401, etc.) just try to load in the video element.
+            runLoad();
             return;
           }
-          const ct = res.headers.get('content-type') ?? '';
-          if (ct && !ct.startsWith('video/') && !ct.includes('application/octet-stream')) {
-            setCheckingUrl(false);
-            setError('URL does not point to a video file. Use a direct link to an MP4 or WebM.');
-            return;
-          }
+          // If HEAD succeeds, trust the URL and let the <video> element handle unsupported formats.
           runLoad();
         })
         .catch(() => {
-          runLoad(); // HEAD failed (CORS, network); try loading in the video element anyway
+          // HEAD failed (CORS, network); try loading in the video element anyway
+          runLoad();
         });
     }
 
