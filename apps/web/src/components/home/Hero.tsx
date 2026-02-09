@@ -1,20 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ContentDetail } from '@/lib/api';
 
 export function Hero({ featured }: { featured: ContentDetail | null | undefined }) {
   const [imageLoaded, setImageLoaded] = useState(false);
-
-  useEffect(() => {
-    if (featured?.posterUrl || featured?.thumbnailUrl) {
-      const img = new Image();
-      img.src = featured.posterUrl ?? featured.thumbnailUrl ?? '';
-      img.onload = () => setImageLoaded(true);
-    }
-  }, [featured?.posterUrl, featured?.thumbnailUrl]);
 
   if (!featured) {
     return (
@@ -38,20 +30,21 @@ export function Hero({ featured }: { featured: ContentDetail | null | undefined 
     <section className="relative h-[56.25vw] min-h-[400px] max-h-[90vh] bg-stream-black overflow-hidden cinema-grain">
       {/* Background image with cinematic zoom */}
       <AnimatePresence>
-        {imageLoaded && (
-          <motion.div
-            initial={{ opacity: 0, scale: 1.15 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.8, ease: 'easeOut' }}
-            className="absolute inset-0"
-          >
-            <img
-              src={featured.posterUrl ?? featured.thumbnailUrl ?? ''}
-              alt=""
-              className="w-full h-full object-cover animate-hero-zoom"
-            />
-          </motion.div>
-        )}
+        <motion.div
+          initial={{ opacity: 0, scale: 1.15 }}
+          animate={{ opacity: imageLoaded ? 1 : 0, scale: 1 }}
+          transition={{ duration: 1.8, ease: 'easeOut' }}
+          className="absolute inset-0"
+        >
+          <img
+            src={featured.posterUrl ?? featured.thumbnailUrl ?? ''}
+            alt=""
+            className="w-full h-full object-cover animate-hero-zoom"
+            decoding="async"
+            fetchPriority="high"
+            onLoad={() => setImageLoaded(true)}
+          />
+        </motion.div>
       </AnimatePresence>
 
       {/* Multi-layer gradient overlays for cinematic depth */}

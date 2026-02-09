@@ -65,6 +65,39 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded }: VideoPlayerProps) {
     setError(null);
     setCheckingUrl(true);
 
+    // Reject YouTube / youtu.be — they can't be played in <video> (CORS, redirects)
+    try {
+      const u = new URL(src);
+      const isYoutube =
+        u.hostname === 'youtube.com' ||
+        u.hostname === 'www.youtube.com' ||
+        u.hostname === 'youtu.be' ||
+        u.hostname === 'm.youtube.com';
+      if (isYoutube) {
+        setCheckingUrl(false);
+        setError(
+          'This is a YouTube link. Use a direct video URL (MP4) for playback. Put YouTube links only in the Trailer field.'
+        );
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+
+    // Reject image URLs — they cause OpaqueResponseBlocking and aren't video
+    const path = src.toLowerCase();
+    if (
+      path.includes('.jpg') ||
+      path.includes('.jpeg') ||
+      path.includes('.png') ||
+      path.includes('.webp') ||
+      path.includes('.gif')
+    ) {
+      setCheckingUrl(false);
+      setError('This is an image URL. Use a direct video URL (MP4 or WebM) in the Video URL field.');
+      return;
+    }
+
     // Destroy previous HLS instance
     if (hlsRef.current) {
       hlsRef.current.destroy();

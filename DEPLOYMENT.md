@@ -274,5 +274,8 @@ Option B — Connect from local:
 - **“Cookie __Secure-YENID / __Secure-YEC has been rejected (cross-site, SameSite Lax/Strict)”**  
   These cookies are from **Vercel** (e.g. Analytics or Speed Insights), not from your app. They are set with SameSite=Lax/Strict, so the browser rejects them in cross-site contexts (e.g. if the page is embedded or opened in a different frame). You can ignore these, or disable Vercel Analytics/Speed Insights in the Vercel project settings if you don’t need them.
 
-- **“A resource is blocked by OpaqueResponseBlocking”**  
-  This usually means a request was made with `fetch(..., { mode: 'no-cors' })` and the response was used in a way that’s blocked. This app does not use `no-cors` for its own requests. If you see it, it may come from a browser extension or a third-party script. Check the console/Network tab for the exact blocked URL.
+- **“A resource is blocked by OpaqueResponseBlocking”** (e.g. for a `.jpg` filename)  
+  Often the **Video URL** was set to a poster/image or YouTube link by mistake. The player now shows a clear error for those. Use only a **direct video URL** (MP4/WebM) in the Video URL field. Poster images go in Poster URL; YouTube links go in Trailer URL.
+
+- **“Cross-Origin Request Blocked” for youtu.be / youtube.com** and **“Media load paused”**  
+  The **Video URL** must be a direct link to an MP4/WebM file (e.g. from Cloudinary), not a YouTube page link. YouTube links cannot be played in the `<video>` element (CORS/redirects). Put YouTube links only in the **Trailer** field. The app will show a message if a YouTube or image URL is used as the video source.

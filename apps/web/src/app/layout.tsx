@@ -7,7 +7,7 @@ const inter = Inter({
   subsets: ['latin'],
   variable: '--font-netflix',
   display: 'swap',
-  preload: true, // keep preload so the preloaded font is used immediately and the warning goes away
+  preload: false, // avoid "preload was not used" warning; font still loads with CSS
 });
 
 export const metadata: Metadata = {

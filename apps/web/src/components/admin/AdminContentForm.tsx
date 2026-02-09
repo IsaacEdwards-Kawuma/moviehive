@@ -290,6 +290,7 @@ export function AdminContentForm({
             currentUrl={form.videoUrl ?? null}
             onUploaded={(url) => setForm((f) => ({ ...f, videoUrl: url || null }))}
           />
+          <p className="text-xs text-stream-text-secondary -mt-2">Use a direct MP4/WebM URL (e.g. Cloudinary). Do not paste YouTube or image links here—use those only for Trailer or Poster.</p>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
