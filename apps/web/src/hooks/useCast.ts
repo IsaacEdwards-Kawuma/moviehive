@@ -74,7 +74,7 @@ export function useCast() {
       const { url, contentType = 'video/mp4', title, posterUrl, currentTime = 0 } = options;
       const cast = window.cast;
       const chromeCast = window.chrome?.cast;
-      if (!cast?.framework?.CastContext || !chromeCast?.cast?.media) return false;
+      if (!cast?.framework?.CastContext || !chromeCast?.media) return false;
 
       const context = cast.framework.CastContext.getInstance();
       let session = context.getCurrentSession();
