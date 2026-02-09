@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
+import { LogoIcon } from '@/components/Logo';
 
 const CINEMATIC_IMAGES = [
   'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1920&q=80',
@@ -100,9 +101,11 @@ export function LoginPage() {
         transition={{ duration: 0.6 }}
         className="p-6 relative z-10"
       >
-        <Link href="/" className="text-stream-accent font-bold text-3xl text-glow tracking-wide">
-          MOVIE HIVE
+        <Link href="/" className="inline-flex items-center gap-3 text-stream-accent font-bold text-3xl text-glow tracking-wide">
+          <LogoIcon className="w-10 h-10" />
+          <span>MOVI HIVE</span>
         </Link>
+        <p className="text-stream-text-secondary text-sm mt-1">Movies, Anytime, Anywhere</p>
       </motion.header>
 
       {/* Form card */}

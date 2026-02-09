@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useProfileStore } from '@/store/useProfileStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import api from '@/lib/api';
+import { LogoIcon } from '@/components/Logo';
 
 const nav = [
   { href: '/', label: 'Home' },
@@ -97,8 +98,16 @@ export function Header() {
       }`}
     >
       <div className="flex items-center gap-8">
-        <Link href="/" className="text-stream-accent font-bold text-2xl tracking-wider hover:text-glow transition-all duration-300 group">
-          <span className="group-hover:tracking-widest transition-all duration-300">MOVIE HIVE</span>
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <LogoIcon className="w-9 h-9 flex-shrink-0" />
+          <div className="flex flex-col">
+            <span className="text-stream-accent font-bold text-2xl tracking-wider group-hover:text-glow transition-all duration-300 group-hover:tracking-widest">
+              MOVI HIVE
+            </span>
+            <span className="text-[10px] md:text-xs text-stream-text-secondary tracking-wide -mt-0.5">
+              Movies, Anytime, Anywhere
+            </span>
+          </div>
         </Link>
         <nav className="hidden md:flex items-center gap-1">
           {nav.map(({ href, label }) => (

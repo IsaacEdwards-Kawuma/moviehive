@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import api, { type AdminContent, type AdminContentCreate, type AdminAnalytics } from '@/lib/api';
 import { AdminContentForm } from '@/components/admin/AdminContentForm';
 import { AdminMonitoring } from '@/components/admin/AdminMonitoring';
+import { LogoIcon } from '@/components/Logo';
 
 type Tab = 'overview' | 'users' | 'content' | 'monitoring';
 type AdminUser = { id: string; email: string; role: string; subscriptionTier: string; createdAt: string; _count: { profiles: number } };
@@ -129,9 +130,15 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-stream-bg text-white">
       <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-stream-bg/95 border-b border-stream-dark-gray">
         <div className="flex items-center gap-6">
-          <Link href="/" className="text-stream-accent font-bold text-2xl">
-            MOVIE HIVE
-          </Link>
+          <div className="flex items-center gap-2">
+            <LogoIcon className="w-8 h-8" />
+            <div>
+              <Link href="/" className="text-stream-accent font-bold text-2xl block leading-tight">
+                MOVI HIVE
+              </Link>
+              <span className="text-xs text-stream-text-secondary">Movies, Anytime, Anywhere</span>
+            </div>
+          </div>
           <nav className="flex gap-2">
             {tabs.map((t) => (
               <button

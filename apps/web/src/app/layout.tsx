@@ -11,8 +11,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Movie Hive - Watch TV Shows & Movies Online',
-  description: 'Movie Hive — unlimited movies and TV shows. Watch anywhere. Cancel anytime.',
+  title: 'MOVI HIVE - Movies, Anytime, Anywhere',
+  description: 'MOVI HIVE — movies and TV shows. Watch anytime, anywhere.',
+  icons: { icon: '/icon.svg' },
 };
 
 export default function RootLayout({
