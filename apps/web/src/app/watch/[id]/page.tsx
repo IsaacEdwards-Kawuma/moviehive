@@ -8,23 +8,61 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
 import { useProfileStore } from '@/store/useProfileStore';
 import { VideoPlayer } from '@/components/player/VideoPlayer';
+import { CastButton } from '@/components/player/CastButton';
+import { useOfflineDownloads } from '@/hooks/useOfflineDownloads';
 
 export default function WatchPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const contentId = params?.id as string;
   const episodeId = searchParams?.get('episode') ?? undefined;
+  const offlineOnly = searchParams?.get('offline') === '1';
   const { currentProfile } = useProfileStore();
+  const { getOfflineBlob } = useOfflineDownloads();
   const progressRef = useRef<number>(0);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const [showUI, setShowUI] = useState(true);
   const uiTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const [offlineUrl, setOfflineUrl] = useState<string | null>(null);
+  const [offlineChecked, setOfflineChecked] = useState(false);
 
   const { data: streamData, isLoading } = useQuery({
     queryKey: ['stream', contentId, episodeId],
     queryFn: () => api.stream.getUrl(contentId, episodeId),
-    enabled: !!contentId,
+    enabled: !!contentId && !offlineOnly,
   });
+
+  const { data: contentDetail } = useQuery({
+    queryKey: ['content', contentId],
+    queryFn: () => api.content.get(contentId),
+    enabled: !!contentId && !!streamData?.url,
+  });
+
+  const offlineUrlRef = useRef<string | null>(null);
+  // Check offline storage and create object URL if we have a downloaded copy
+  useEffect(() => {
+    if (!contentId) return;
+    setOfflineUrl(null);
+    setOfflineChecked(false);
+    if (offlineUrlRef.current) {
+      URL.revokeObjectURL(offlineUrlRef.current);
+      offlineUrlRef.current = null;
+    }
+    getOfflineBlob(contentId, episodeId ?? null).then((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        offlineUrlRef.current = url;
+        setOfflineUrl(url);
+      }
+      setOfflineChecked(true);
+    });
+    return () => {
+      if (offlineUrlRef.current) {
+        URL.revokeObjectURL(offlineUrlRef.current);
+        offlineUrlRef.current = null;
+      }
+    };
+  }, [contentId, episodeId, getOfflineBlob]);
 
   const saveProgress = useCallback(
     (progress: number, completed: boolean) => {
@@ -74,7 +112,12 @@ export default function WatchPage() {
     return () => clearTimeout(uiTimeoutRef.current);
   }, [resetUITimeout]);
 
-  if (isLoading || !streamData?.url) {
+  const videoSrc = offlineUrl ?? (!offlineOnly ? streamData?.url : null);
+  const waitingForOffline = offlineOnly && !offlineChecked;
+  const offlineNotFound = offlineOnly && offlineChecked && !offlineUrl;
+  const waitingForStream = !offlineOnly && !offlineUrl && (isLoading || !streamData?.url);
+
+  if (waitingForOffline || waitingForStream) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <motion.div
@@ -83,8 +126,52 @@ export default function WatchPage() {
           className="flex flex-col items-center gap-4"
         >
           <div className="w-16 h-16 border-4 border-stream-accent border-t-transparent rounded-full animate-spin" />
-          <p className="text-stream-text-secondary animate-pulse">Loading stream...</p>
+          <p className="text-stream-text-secondary animate-pulse">
+            {offlineOnly ? 'Loading offline...' : 'Loading stream...'}
+          </p>
         </motion.div>
+      </div>
+    );
+  }
+
+  if (offlineNotFound) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center max-w-md"
+        >
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full glass flex items-center justify-center">
+            <svg className="w-8 h-8 text-stream-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-bold mb-2">Not available offline</h1>
+          <p className="text-stream-text-secondary mb-6">
+            This title isn’t in your downloads. Download it from the title page to watch offline.
+          </p>
+          <Link
+            href={`/title/${contentId}`}
+            className="inline-flex items-center gap-2 bg-stream-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors"
+          >
+            Go to title
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (!videoSrc) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <p className="text-stream-text-secondary">Video not available.</p>
+        <Link href={`/title/${contentId}`} className="ml-2 text-stream-accent hover:underline">
+          Back
+        </Link>
       </div>
     );
   }
@@ -102,22 +189,35 @@ export default function WatchPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
+            className="absolute top-4 left-0 right-0 z-20 flex items-center justify-between px-4"
           >
             <Link
-              href={`/title/${contentId}`}
-              className="absolute top-4 left-4 z-20 flex items-center gap-2 text-white/80 hover:text-white transition-colors glass px-4 py-2 rounded-lg"
+              href={offlineOnly ? `/downloads` : `/title/${contentId}`}
+              className="flex items-center gap-2 text-white/80 hover:text-white transition-colors glass px-4 py-2 rounded-lg"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               Back
             </Link>
+            {!offlineOnly && streamData?.url && (
+              <CastButton
+                media={{
+                  url: streamData.url,
+                  title: contentDetail?.title ?? undefined,
+                  posterUrl: contentDetail?.posterUrl ?? contentDetail?.thumbnailUrl ?? undefined,
+                  currentTime: progressRef.current,
+                }}
+                className="glass px-3 py-2"
+                title="Cast to TV or device"
+              />
+            )}
           </motion.div>
         )}
       </AnimatePresence>
 
       <VideoPlayer
-        src={streamData.url}
+        src={videoSrc}
         onTimeUpdate={(t) => {
           progressRef.current = Math.round(t);
           saveProgress(progressRef.current, false);

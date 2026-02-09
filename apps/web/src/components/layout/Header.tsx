@@ -13,6 +13,7 @@ const nav = [
   { href: '/', label: 'Home' },
   { href: '/browse', label: 'Browse' },
   { href: '/my-list', label: 'My List' },
+  { href: '/downloads', label: 'Downloads' },
 ];
 
 const adminNav = { href: '/admin', label: 'Admin' };

@@ -1,7 +1,7 @@
 const RENDER_API_BASE = 'https://moviehive-api.onrender.com/api';
 
 /** API base URL: use env on Vercel/production, fallback to Render URL when on *.vercel.app, else /api/server for local dev. */
-function getApiBase(): string {
+export function getApiBase(): string {
   const env = process.env.NEXT_PUBLIC_API_URL;
   if (env && env.startsWith('http')) return env;
   if (typeof window !== 'undefined' && window.location.origin.includes('vercel.app')) return RENDER_API_BASE;

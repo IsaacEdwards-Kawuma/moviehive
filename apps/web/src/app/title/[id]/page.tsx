@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { type ContentDetail } from '@/lib/api';
 import { useProfileStore } from '@/store/useProfileStore';
 import { Header } from '@/components/layout/Header';
+import { DownloadButton } from '@/components/player/DownloadButton';
 
 export default function TitlePage() {
   const params = useParams();
@@ -167,6 +168,19 @@ export default function TitlePage() {
                 </AnimatePresence>
                 {inList ? 'In My List' : 'My List'}
               </motion.button>
+
+              <DownloadButton
+                contentId={id}
+                episodeId={isSeries ? episodes[0]?.id ?? null : null}
+                title={detail.title}
+                posterUrl={detail.posterUrl ?? detail.thumbnailUrl}
+                type={detail.type}
+                duration={detail.duration}
+                season={isSeries ? episodes[0]?.season : undefined}
+                episode={isSeries ? episodes[0]?.episode : undefined}
+                episodeTitle={isSeries ? episodes[0]?.title : undefined}
+                className="flex-shrink-0"
+              />
             </div>
           </motion.div>
 
@@ -189,11 +203,9 @@ export default function TitlePage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.7 + i * 0.04 }}
+                    className="flex gap-3 p-3 rounded-lg hover:bg-white/5 group transition-all duration-300 card-shine items-center"
                   >
-                    <Link
-                      href={`/watch/${id}?episode=${ep.id}`}
-                      className="flex gap-3 p-3 rounded-lg hover:bg-white/5 group transition-all duration-300 card-shine"
-                    >
+                    <Link href={`/watch/${id}?episode=${ep.id}`} className="flex gap-3 flex-1 min-w-0">
                       <div className="w-36 flex-shrink-0 aspect-video rounded-md overflow-hidden bg-stream-dark-gray relative">
                         <img
                           src={ep.thumbnailUrl ?? detail.thumbnailUrl ?? ''}
@@ -217,6 +229,21 @@ export default function TitlePage() {
                         )}
                       </div>
                     </Link>
+                    <div onClick={(e) => e.preventDefault()}>
+                      <DownloadButton
+                        contentId={id}
+                        episodeId={ep.id}
+                        title={detail.title}
+                        posterUrl={ep.thumbnailUrl ?? detail.thumbnailUrl}
+                        type="series"
+                        duration={ep.duration}
+                        season={ep.season}
+                        episode={ep.episode}
+                        episodeTitle={ep.title}
+                        variant="icon"
+                        className="flex-shrink-0"
+                      />
+                    </div>
                   </motion.div>
                 ))}
               </div>
