@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
-import { setApiAccessTokenGetter } from '@/lib/api';
+import { setApiAccessTokenGetter, setApiTokenUpdater } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -18,6 +18,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
   useEffect(() => {
     setApiAccessTokenGetter(() => useAuthStore.getState().accessToken);
+    setApiTokenUpdater((token) => useAuthStore.getState().setToken(token));
   }, []);
 
   return (

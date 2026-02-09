@@ -238,6 +238,18 @@ Option B — Connect from local:
 
 ---
 
+## Multiple users and devices
+
+The app supports **different accounts** and **multiple devices** at the same time.
+
+- **Different accounts** – Each person has their own account (email/password or Google). User A on a phone and User B on a laptop can both be logged in and watch different content at the same time. There is no “one account for the whole app” limit.
+- **Same account on multiple devices** – One account can be used on several devices (e.g. phone, tablet, TV). Each device has its own session (its own login token). Logging in on a new device does **not** log out other devices. All can watch at the same time.
+- **How it works** – Each device stores its own auth token (in cookies/localStorage). The backend does not invalidate previous tokens when you log in elsewhere. Access tokens are refreshed automatically when they expire, so sessions stay active on each device.
+
+So: different users on different devices, and the same user on different devices, can all use the app and watch different things at the same time.
+
+---
+
 ## Video playback on production
 
 **Why video works locally but not on the web**

@@ -9,13 +9,21 @@ function getApiBase(): string {
 }
 
 let getAccessToken: (() => string | null) | null = null;
+let onTokenRefreshed: ((token: string) => void) | null = null;
+
 export function setApiAccessTokenGetter(fn: () => string | null) {
   getAccessToken = fn;
 }
 
+/** Called when a new access token is obtained via refresh; used to keep store in sync so multiple tabs/devices can stay logged in. */
+export function setApiTokenUpdater(fn: (token: string) => void) {
+  onTokenRefreshed = fn;
+}
+
 async function request<T>(
   path: string,
-  options: RequestInit & { params?: Record<string, string | number | undefined> } = {}
+  options: RequestInit & { params?: Record<string, string | number | undefined> } = {},
+  retryAfterRefresh = false
 ): Promise<T> {
   const { params, ...init } = options;
   const pathWithParams = path.startsWith('http')
@@ -48,6 +56,24 @@ async function request<T>(
     }
     throw new Error(msg);
   }
+
+  // On 401, try refresh once so sessions stay alive on each device
+  if (res.status === 401 && !retryAfterRefresh && !path.includes('/auth/refresh-token') && !path.includes('/auth/login') && !path.includes('/auth/register')) {
+    try {
+      const refreshUrl = `${getApiBase()}/auth/refresh-token`;
+      const refreshRes = await fetch(refreshUrl, { method: 'POST', credentials: 'include' });
+      if (refreshRes.ok) {
+        const data = (await refreshRes.json()) as { accessToken?: string };
+        if (data.accessToken && onTokenRefreshed) {
+          onTokenRefreshed(data.accessToken);
+          return request<T>(path, options, true);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || err.message || 'Request failed');
