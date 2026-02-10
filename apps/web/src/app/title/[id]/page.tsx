@@ -136,6 +136,14 @@ export default function TitlePage() {
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
                 <Link
                   href={isSeries ? `/watch/${id}?episode=${episodes[0]?.id}` : `/watch/${id}`}
+                  onMouseEnter={() => {
+                    const episodeId = isSeries ? episodes[0]?.id : undefined;
+                    queryClient.prefetchQuery({
+                      queryKey: ['stream', id, episodeId],
+                      queryFn: () => api.stream.getUrl(id, episodeId),
+                      staleTime: 60_000,
+                    });
+                  }}
                   className="flex items-center justify-center gap-2 bg-white text-stream-bg px-5 sm:px-7 py-2.5 sm:py-3 rounded-lg font-semibold shadow-glow-white hover:shadow-lg transition-all duration-300 text-base sm:text-lg"
                 >
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -205,7 +213,17 @@ export default function TitlePage() {
                     transition={{ delay: 0.7 + i * 0.04 }}
                     className="flex gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg hover:bg-white/5 group transition-all duration-300 card-shine items-center"
                   >
-                    <Link href={`/watch/${id}?episode=${ep.id}`} className="flex gap-2 sm:gap-3 flex-1 min-w-0">
+                    <Link
+                      href={`/watch/${id}?episode=${ep.id}`}
+                      onMouseEnter={() => {
+                        queryClient.prefetchQuery({
+                          queryKey: ['stream', id, ep.id],
+                          queryFn: () => api.stream.getUrl(id, ep.id),
+                          staleTime: 60_000,
+                        });
+                      }}
+                      className="flex gap-2 sm:gap-3 flex-1 min-w-0"
+                    >
                       <div className="w-24 sm:w-32 md:w-36 flex-shrink-0 aspect-video rounded-md overflow-hidden bg-stream-dark-gray relative">
                         <img
                           src={ep.thumbnailUrl ?? detail.thumbnailUrl ?? ''}

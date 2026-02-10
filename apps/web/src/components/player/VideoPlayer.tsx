@@ -154,7 +154,8 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded }: VideoPlayerProps) {
       video.innerHTML = '';
       hadStartedPlayingRef.current = false;
 
-      // Optional: quick HEAD check so we can show "Video not found" before loading
+      // Skip HEAD for proxy URLs: our proxy doesn't support HEAD (would do full GET and slow load). Start loading immediately.
+      const isProxyUrl = src.includes('/stream/') && src.includes('proxy');
       const videoType = getVideoType(src);
       const runLoad = () => {
         setCheckingUrl(false);
@@ -172,25 +173,24 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded }: VideoPlayerProps) {
         }, { once: true });
       };
 
-      fetch(src, { method: 'HEAD', mode: 'cors', credentials: 'omit' })
-        .then((res) => {
-          if (!res.ok) {
-            if (res.status === 404) {
-              setCheckingUrl(false);
-              setError('Video not found (404). Check that the URL is correct and the file exists on your CDN.');
+      if (isProxyUrl) {
+        runLoad();
+      } else {
+        fetch(src, { method: 'HEAD', mode: 'cors', credentials: 'omit' })
+          .then((res) => {
+            if (!res.ok) {
+              if (res.status === 404) {
+                setCheckingUrl(false);
+                setError('Video not found (404). Check that the URL is correct and the file exists on your CDN.');
+                return;
+              }
+              runLoad();
               return;
             }
-            // For other statuses (403, 401, etc.) just try to load in the video element.
             runLoad();
-            return;
-          }
-          // If HEAD succeeds, trust the URL and let the <video> element handle unsupported formats.
-          runLoad();
-        })
-        .catch(() => {
-          // HEAD failed (CORS, network); try loading in the video element anyway
-          runLoad();
-        });
+          })
+          .catch(() => runLoad());
+      }
     }
 
     return () => {
@@ -209,6 +209,7 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded }: VideoPlayerProps) {
         controls
         autoPlay
         playsInline
+        preload="auto"
       />
       {checkingUrl && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/60">
