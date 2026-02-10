@@ -303,6 +303,15 @@ The app streams video through its own server (proxy). If Bunny returns **403 For
 
 Using the **Pull Zone URL** (e.g. `https://yourzone.b-cdn.net/...`) in the Video URL field and allowing the server’s referrer usually fixes 403.
 
+### Watching the same video on multiple devices at once
+
+If playback works on one device but **stops when you start watching on another** (phone, tablet, different account), the video host may be limiting **concurrent streams** to the same file.
+
+1. In Bunny **Pull Zone** → **Security** / **Access** (or similar):
+   - Ensure there is **no “single stream” or “one connection per URL”** limit.
+   - Bunny’s default Pull Zones normally allow many concurrent connections; if you added custom rules or use a third-party “stream protection” that limits concurrency, turn it off or raise the limit if you want multiple devices to watch the same video at once.
+2. In the app, if one device shows **“Playback stopped”** when you open the same title elsewhere, use **Retry** on that device after the other has stopped, or watch on one device at a time.
+
 ---
 
 ## Quick checklist

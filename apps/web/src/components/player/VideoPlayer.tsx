@@ -19,16 +19,21 @@ function getVideoType(url: string): string | undefined {
 }
 
 /** MediaError codes: 1=aborted, 2=network, 3=decode, 4=src not supported */
-function getPlaybackErrorMessage(code: number | undefined): string {
+function getPlaybackErrorMessage(code: number | undefined, wasPlaying: boolean): string {
   switch (code) {
-    case 2: // MEDIA_ERR_NETWORK — often 404, CORS, or unreachable
-      return 'Video not found or unreachable. On production, use a video URL (e.g. Cloudinary) instead of uploading to the server.';
+    case 2: // MEDIA_ERR_NETWORK — 404, CORS, unreachable, or connection dropped (e.g. multi-device limit)
+      if (wasPlaying) {
+        return 'Playback stopped. If you started watching on another device or tab, your video host may limit simultaneous streams. Tap Retry to try again or watch on one device at a time.';
+      }
+      return 'Video not found or unreachable. Check the URL and that your CDN allows access. If you use Bunny, ensure the Pull Zone allows multiple concurrent streams so different devices can watch at once.';
     case 4: // MEDIA_ERR_SRC_NOT_SUPPORTED
       return 'This format is not supported by your browser. Use MP4 (H.264) or WebM.';
     case 1:
     case 3:
     default:
-      return 'Playback failed. Try again or use a different video URL.';
+      return wasPlaying
+        ? 'Playback failed. Tap Retry to try again.'
+        : 'Playback failed. Try again or use a different video URL.';
   }
 }
 
@@ -41,8 +46,10 @@ interface VideoPlayerProps {
 export function VideoPlayer({ src, onTimeUpdate, onEnded }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const hadStartedPlayingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [checkingUrl, setCheckingUrl] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   // Attach time/end listeners
   useEffect(() => {
@@ -145,6 +152,7 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded }: VideoPlayerProps) {
       video.crossOrigin = 'anonymous';
       video.removeAttribute('src');
       video.innerHTML = '';
+      hadStartedPlayingRef.current = false;
 
       // Optional: quick HEAD check so we can show "Video not found" before loading
       const videoType = getVideoType(src);
@@ -156,10 +164,11 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded }: VideoPlayerProps) {
         video.appendChild(source);
         video.load();
         video.addEventListener('loadeddata', () => {
+          hadStartedPlayingRef.current = true;
           video.play().catch(() => {});
         }, { once: true });
         video.addEventListener('error', () => {
-          setError(getPlaybackErrorMessage(video.error?.code));
+          setError(getPlaybackErrorMessage(video.error?.code, hadStartedPlayingRef.current));
         }, { once: true });
       };
 
@@ -168,9 +177,7 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded }: VideoPlayerProps) {
           if (!res.ok) {
             if (res.status === 404) {
               setCheckingUrl(false);
-              setError(
-                'Video not found (404). On production, use a video URL from Cloudinary or similar—server uploads are not stored.'
-              );
+              setError('Video not found (404). Check that the URL is correct and the file exists on your CDN.');
               return;
             }
             // For other statuses (403, 401, etc.) just try to load in the video element.
@@ -192,7 +199,7 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded }: VideoPlayerProps) {
         hlsRef.current = null;
       }
     };
-  }, [src]);
+  }, [src, retryKey]);
 
   return (
     <div className="relative w-full h-screen bg-black">
@@ -218,7 +225,14 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded }: VideoPlayerProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <p className="text-white text-lg mb-2">Playback Error</p>
-            <p className="text-stream-text-secondary text-sm whitespace-pre-line">{error}</p>
+            <p className="text-stream-text-secondary text-sm whitespace-pre-line mb-4">{error}</p>
+            <button
+              type="button"
+              onClick={() => { setError(null); setRetryKey((k) => k + 1); }}
+              className="px-5 py-2.5 rounded-lg bg-stream-accent text-white font-semibold hover:bg-red-600 transition-colors"
+            >
+              Retry
+            </button>
           </div>
         </div>
       )}
