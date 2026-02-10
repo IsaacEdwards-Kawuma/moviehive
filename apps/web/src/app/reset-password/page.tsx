@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -8,7 +8,7 @@ import { useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { LogoIcon } from '@/components/Logo';
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const token = searchParams?.get('token') ?? '';
   const [password, setPassword] = useState('');
@@ -113,5 +113,22 @@ export default function ResetPasswordPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+function ResetPasswordFallback() {
+  return (
+    <div className="min-h-screen flex flex-col bg-stream-bg items-center justify-center">
+      <div className="w-10 h-10 border-2 border-stream-accent border-t-transparent rounded-full animate-spin" />
+      <p className="mt-4 text-stream-text-secondary text-sm">Loading...</p>
+    </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<ResetPasswordFallback />}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
