@@ -1,9 +1,25 @@
 # Fix Render "Bad Gateway" / Service Unavailable
 
-If you see **Bad Gateway** or **This service is currently unavailable** when opening `https://moviehive-api.onrender.com` (or your API URL), the API service is not running. Follow these steps.
+If you see **Bad Gateway**, **502**, or **"Can't reach the API server"** (with CORS in the console), the API on Render is not responding. Fix the 502 first; then CORS will work.
+
+**Quick checklist (do in order):**
+
+1. **Wake the server (free tier)**  
+   Open **https://moviehive-api.onrender.com/api/health** in a new tab and wait 30–60 seconds. If it eventually shows `{"status":"ok",...}`, the API is up — try login again.
+
+2. **Set Start Command**  
+   [Render Dashboard](https://dashboard.render.com) → your **API** service → **Settings** → **Build & Deploy** → **Start Command** = `cd apps/server && npm run start` → **Save** → **Manual Deploy** → **Deploy latest commit**.
+
+3. **Check Logs**  
+   Same service → **Logs**. You must see `Server running on http://localhost:4000`. If you see `Exited with status 1` or database errors, fix the Start Command (step 2) or **Environment** (e.g. `DATABASE_URL`, `JWT_SECRET`).
+
+4. **Environment**  
+   **Environment** tab: `DATABASE_URL`, `CORS_ORIGIN` (your Vercel app URL), `JWT_SECRET`, `JWT_REFRESH_SECRET` must be set. Save and redeploy.
+
+---
 
 **If you see "CORS header 'Access-Control-Allow-Origin' missing" with status 502:**  
-The 502 means the API did not respond. The browser then reports CORS because the 502 response (from Render’s gateway) has no CORS headers. **Fix the 502 first** using the steps below; once the API responds, CORS will work.
+The 502 means the API did not respond. The browser reports CORS because the 502 response (from Render’s gateway) has no CORS headers. **Fix the 502 first** using the steps above; once the API responds, CORS will work.
 
 ## 1. Fix the Start Command (most common cause)
 
