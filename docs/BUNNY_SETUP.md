@@ -292,6 +292,17 @@ If the page stays on “Loading stream” or the browser console shows a **CORS*
 
 Then try playing the video again in MOVI HIVE.
 
+### If you see “403” or “Video source denied access”
+
+The app streams video through its own server (proxy). If Bunny returns **403 Forbidden** to the server:
+
+1. In Bunny **Pull Zone** → **Security** (or **Access**):
+   - **Disable “Block direct linking”** if it’s on, or
+   - Add your **API/server domain** (e.g. `moviehive-api.onrender.com`) to **Allowed Referrers** so the server’s requests are allowed.
+2. Save and try again.
+
+Using the **Pull Zone URL** (e.g. `https://yourzone.b-cdn.net/...`) in the Video URL field and allowing the server’s referrer usually fixes 403.
+
 ---
 
 ## Quick checklist

@@ -8,6 +8,7 @@ import {
   signRefreshToken,
   verifyRefreshToken,
   getRefreshTokenFromRequest,
+  addPartitionedToCookies,
 } from '../lib/auth.js';
 import { requireAuth } from '../middleware/auth.js';
 
@@ -47,6 +48,7 @@ authRouter.post('/register', async (req, res) => {
     : { httpOnly: true, maxAge: 15 * 60 * 1000, sameSite: 'lax' as const };
   res.cookie('accessToken', accessToken, cookieOpts);
   res.cookie('refreshToken', refreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 });
+  if (cookieOpts.sameSite === 'none') addPartitionedToCookies(res);
   res.status(201).json({
     user: { id: user.id, email: user.email, subscriptionTier: user.subscriptionTier, role: user.role },
     accessToken,
@@ -81,6 +83,7 @@ authRouter.post('/login', async (req, res) => {
     : { httpOnly: true, maxAge: 15 * 60 * 1000, sameSite: 'lax' as const };
   res.cookie('accessToken', accessToken, cookieOpts);
   res.cookie('refreshToken', refreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 });
+  if (cookieOpts.sameSite === 'none') addPartitionedToCookies(res);
   res.json({
     user: { id: user.id, email: user.email, subscriptionTier: user.subscriptionTier, role: user.role },
     accessToken,
@@ -115,6 +118,7 @@ authRouter.post('/refresh-token', async (req, res) => {
     ? { httpOnly: true, maxAge: 15 * 60 * 1000, sameSite: 'none' as const, secure: true }
     : { httpOnly: true, maxAge: 15 * 60 * 1000, sameSite: 'lax' as const };
   res.cookie('accessToken', accessToken, cookieOpts);
+  if (cookieOpts.sameSite === 'none') addPartitionedToCookies(res);
   res.json({ accessToken, expiresIn: 900 });
 });
 

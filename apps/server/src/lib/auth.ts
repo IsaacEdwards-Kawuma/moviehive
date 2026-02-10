@@ -1,6 +1,17 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
+
+/** Call after setting auth cookies when cross-origin (sameSite: 'none') so Chrome accepts them (Partitioned attribute). */
+export function addPartitionedToCookies(res: Response): void {
+  const setCookie = res.getHeader('Set-Cookie');
+  if (!setCookie) return;
+  if (Array.isArray(setCookie)) {
+    res.setHeader('Set-Cookie', setCookie.map((c: string) => c + '; Partitioned'));
+  } else {
+    res.setHeader('Set-Cookie', (setCookie as string) + '; Partitioned');
+  }
+}
 
 const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret-change-in-production';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET ?? 'dev-refresh-secret';

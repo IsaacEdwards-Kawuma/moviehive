@@ -124,14 +124,46 @@ streamRouter.get('/:contentId/proxy', async (req, res) => {
   }
 
   const finalUrl = resolveVideoUrl(videoUrl, req);
+
+  // Block image URLs — they cause OpaqueResponseBlocking and aren't playable as video
+  const lower = finalUrl.toLowerCase();
+  if (
+    lower.includes('.jpg') ||
+    lower.includes('.jpeg') ||
+    lower.includes('.png') ||
+    lower.includes('.webp') ||
+    lower.includes('.gif')
+  ) {
+    res.status(400).json({
+      error: 'Video URL points to an image. Use a direct video link (MP4 or WebM) in Admin.',
+    });
+    return;
+  }
+
   const range = req.headers.range;
+  const rangeVal = Array.isArray(range) ? range[0] : range;
+  const upstreamHeaders: Record<string, string> = {
+    'User-Agent': (req.headers['user-agent'] as string) || 'MovieHive-Proxy/1.0',
+  };
+  if (rangeVal) upstreamHeaders['Range'] = rangeVal;
+  // Some CDNs (e.g. Bunny) allow server requests when Referer matches; avoid 403
+  try {
+    const u = new URL(finalUrl);
+    upstreamHeaders['Referer'] = u.origin + '/';
+  } catch {
+    /* ignore */
+  }
 
   try {
-    const headers: Record<string, string> = {};
-    if (range) headers['Range'] = range;
-    const resp = await fetch(finalUrl, { headers });
+    const resp = await fetch(finalUrl, { headers: upstreamHeaders });
     if (!resp.ok) {
-      res.status(resp.status).json({ error: 'Video source unavailable' });
+      if (resp.status === 403) {
+        res.status(502).json({
+          error: 'Video source denied access (403). Check CDN settings: allow direct linking or add your domain to referrers.',
+        });
+        return;
+      }
+      res.status(resp.status >= 500 ? 502 : resp.status).json({ error: 'Video source unavailable' });
       return;
     }
     const contentType = resp.headers.get('content-type') || 'video/mp4';
