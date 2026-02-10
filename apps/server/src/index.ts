@@ -30,18 +30,30 @@ const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
   : ['http://localhost:3000'];
 
+function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  if (origin.endsWith('.vercel.app')) return true;
+  if (origin.endsWith('.onrender.com')) return true;
+  return false;
+}
+
 app.use(cors({
-  origin: (origin, cb) => {
-    if (!origin) return cb(null, true);
-    if (allowedOrigins.includes(origin)) return cb(null, true);
-    if (origin.endsWith('.vercel.app')) return cb(null, true);
-    if (origin.endsWith('.onrender.com')) return cb(null, true);
-    return cb(null, false);
-  },
+  origin: (origin, cb) => cb(null, isAllowedOrigin(origin)),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
+// Ensure CORS headers on every response (so errors and 4xx/5xx from our app always allow the frontend to read the body)
+app.use((req, res, next) => {
+  const origin = req.get('origin');
+  if (origin && isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  next();
+});
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 
@@ -124,11 +136,13 @@ app.get('/api/health', (_req, res) => {
 app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);
   const origin = req.get('origin');
-  if (origin && (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com'))) {
+  if (origin && isAllowedOrigin(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
-  res.status(500).json({ error: 'Internal server error' });
+  if (!res.headersSent) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.listen(PORT, () => {

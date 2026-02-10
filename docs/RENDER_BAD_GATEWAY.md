@@ -2,6 +2,9 @@
 
 If you see **Bad Gateway** or **This service is currently unavailable** when opening `https://moviehive-api.onrender.com` (or your API URL), the API service is not running. Follow these steps.
 
+**If you see "CORS header 'Access-Control-Allow-Origin' missing" with status 502:**  
+The 502 means the API did not respond. The browser then reports CORS because the 502 response (from Render’s gateway) has no CORS headers. **Fix the 502 first** using the steps below; once the API responds, CORS will work.
+
 ## 1. Fix the Start Command (most common cause)
 
 Render may be using an **old start command** that fails (e.g. runs `prisma db push` without `--accept-data-loss` and the process exits before the server starts).
