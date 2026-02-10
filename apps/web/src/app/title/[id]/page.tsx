@@ -63,6 +63,13 @@ export default function TitlePage() {
     },
   });
 
+  const trailerEmbedUrl = useMemo(() => {
+    if (!content) return null;
+    const d = content as ContentDetail;
+    const url = d.trailerUrl?.trim() || null;
+    return url ? getYouTubeEmbedUrl(url) : null;
+  }, [content]);
+
   if (isLoading || !content) {
     return (
       <div className="min-h-screen bg-stream-bg">
@@ -84,7 +91,6 @@ export default function TitlePage() {
   const isSeries = detail.type === 'series';
   const episodes = detail.episodes ?? [];
   const trailerUrl = detail.trailerUrl?.trim() || null;
-  const trailerEmbedUrl = useMemo(() => (trailerUrl ? getYouTubeEmbedUrl(trailerUrl) : null), [trailerUrl]);
   const isTrailerYouTube = !!trailerEmbedUrl;
 
   return (

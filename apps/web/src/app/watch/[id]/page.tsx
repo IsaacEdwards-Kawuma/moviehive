@@ -134,6 +134,47 @@ export default function WatchPage() {
     return () => clearTimeout(uiTimeoutRef.current);
   }, [resetUITimeout]);
 
+  const handleStartOver = useCallback(() => {
+    videoPlayerRef.current?.seekTo(0);
+    progressRef.current = 0;
+    if (currentProfile?.id) {
+      api.watchHistory
+        .update({
+          profileId: currentProfile.id,
+          contentId,
+          episodeId: episodeId ?? null,
+          progress: 0,
+          completed: false,
+        })
+        .catch(() => {});
+    }
+    resetUITimeout();
+  }, [currentProfile?.id, contentId, episodeId, resetUITimeout]);
+
+  const handleDoubleTapSeek = useCallback(
+    (clientX: number) => {
+      const container = document.querySelector('[data-watch-video-container]');
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const width = rect.width;
+      const now = Date.now();
+      const last = lastTapRef.current;
+      if (now - last.time <= DOUBLE_TAP_MS && Math.abs(x - last.x) < 80) {
+        const currentTime = videoPlayerRef.current?.getCurrentTime() ?? 0;
+        const leftHalf = x < width / 2;
+        const newTime = leftHalf
+          ? Math.max(0, currentTime - SEEK_DELTA)
+          : currentTime + SEEK_DELTA;
+        videoPlayerRef.current?.seekTo(newTime);
+        lastTapRef.current = { time: 0, x: 0 };
+        return;
+      }
+      lastTapRef.current = { time: now, x };
+    },
+    []
+  );
+
   const streamUrl = streamData?.proxyUrl ?? streamData?.url;
   const isImageUrl =
     typeof streamData?.url === 'string' && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(streamData.url);
@@ -310,47 +351,6 @@ export default function WatchPage() {
       </div>
     );
   }
-
-  const handleStartOver = useCallback(() => {
-    videoPlayerRef.current?.seekTo(0);
-    progressRef.current = 0;
-    if (currentProfile?.id) {
-      api.watchHistory
-        .update({
-          profileId: currentProfile.id,
-          contentId,
-          episodeId: episodeId ?? null,
-          progress: 0,
-          completed: false,
-        })
-        .catch(() => {});
-    }
-    resetUITimeout();
-  }, [currentProfile?.id, contentId, episodeId, resetUITimeout]);
-
-  const handleDoubleTapSeek = useCallback(
-    (clientX: number) => {
-      const container = document.querySelector('[data-watch-video-container]');
-      if (!container) return;
-      const rect = container.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const width = rect.width;
-      const now = Date.now();
-      const last = lastTapRef.current;
-      if (now - last.time <= DOUBLE_TAP_MS && Math.abs(x - last.x) < 80) {
-        const currentTime = videoPlayerRef.current?.getCurrentTime() ?? 0;
-        const leftHalf = x < width / 2;
-        const newTime = leftHalf
-          ? Math.max(0, currentTime - SEEK_DELTA)
-          : currentTime + SEEK_DELTA;
-        videoPlayerRef.current?.seekTo(newTime);
-        lastTapRef.current = { time: 0, x: 0 };
-        return;
-      }
-      lastTapRef.current = { time: now, x };
-    },
-    []
-  );
 
   return (
     <div
