@@ -4,19 +4,24 @@ If you see **Bad Gateway** or **This service is currently unavailable** when ope
 
 ## 1. Fix the Start Command (most common cause)
 
-Render may be using an **old start command** that fails (e.g. `prisma db push` without `--accept-data-loss`).
+Render may be using an **old start command** that fails (e.g. runs `prisma db push` without `--accept-data-loss` and the process exits before the server starts).
 
 1. Go to **[Render Dashboard](https://dashboard.render.com)** → open your **moviehive-api** (or API) service.
 2. Click **Settings** in the left sidebar.
-3. Scroll to **Build & Deploy** → **Start Command**.
-4. Set it to **exactly**:
+3. Scroll to **Build & Deploy**.
+4. Set **Start Command** to **exactly**:
    ```bash
-   cd apps/server && npm run start
+   cd apps/server && node dist/index.js
    ```
-5. Click **Save Changes**.
-6. Go to **Manual Deploy** → **Deploy latest commit** (or wait for the next auto deploy).
+5. Set **Pre-Deploy Command** to (runs after build, before start; applies DB schema):
+   ```bash
+   cd apps/server && npx prisma db push --accept-data-loss --skip-generate
+   ```
+   If your service was created from the repo’s `render.yaml`, this may already be set when you sync the Blueprint.
+6. Click **Save Changes**.
+7. Go to **Manual Deploy** → **Deploy latest commit** (or wait for the next auto deploy).
 
-The server’s `npm run start` runs `prisma db push --accept-data-loss --skip-generate` then starts the app. If the start command was the old `npx prisma db push --skip-generate && node dist/index.js`, it fails on the schema change and the service never starts → Bad Gateway.
+The start command only runs the Node server. The pre-deploy command runs Prisma so the schema (including the `slug` column) is applied before each deploy. If the start command was the old `npx prisma db push --skip-generate && node dist/index.js`, it failed on the schema change and the service never started → Bad Gateway.
 
 ## 2. Check the logs
 
