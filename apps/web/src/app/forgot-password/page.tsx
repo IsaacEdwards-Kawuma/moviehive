@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useMutation } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { getApiBase } from '@/lib/api';
 import { LogoIcon } from '@/components/Logo';
 
 export default function ForgotPasswordPage() {
@@ -56,7 +56,21 @@ export default function ForgotPasswordPage() {
                 className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-stream-text-secondary focus:outline-none focus:ring-2 focus:ring-stream-accent"
                 required
               />
-              {error && <p className="text-stream-accent text-sm">{error}</p>}
+              {error && (
+                <div className="text-stream-accent text-sm space-y-2">
+                  <p>{error}</p>
+                  {(error.includes("Can't reach") || error.includes("isn't responding")) && (
+                    <a
+                      href={`${getApiBase()}/health`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block text-white/90 hover:text-white underline text-xs"
+                    >
+                      Open API health check (may wake server) →
+                    </a>
+                  )}
+                </div>
+              )}
               <button
                 type="submit"
                 disabled={forgotMu.isPending}

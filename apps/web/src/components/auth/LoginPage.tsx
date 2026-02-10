@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { getApiBase } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LogoIcon } from '@/components/Logo';
 
@@ -168,14 +168,24 @@ export function LoginPage() {
 
             <AnimatePresence>
               {error && (
-                <motion.p
+                <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="text-stream-accent text-sm bg-stream-accent/10 px-3 py-2 rounded-lg"
+                  className="text-stream-accent text-sm bg-stream-accent/10 px-3 py-2 rounded-lg space-y-2"
                 >
-                  {error}
-                </motion.p>
+                  <p>{error}</p>
+                  {(error.includes("Can't reach") || error.includes("isn't responding")) && (
+                    <a
+                      href={`${getApiBase()}/health`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block text-white/90 hover:text-white underline text-xs"
+                    >
+                      Open API health check (may wake server) →
+                    </a>
+                  )}
+                </motion.div>
               )}
             </AnimatePresence>
 
