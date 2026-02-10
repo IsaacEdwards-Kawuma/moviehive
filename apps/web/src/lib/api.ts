@@ -20,12 +20,17 @@ export function setApiTokenUpdater(fn: (token: string) => void) {
   onTokenRefreshed = fn;
 }
 
+type RequestOptions = RequestInit & {
+  params?: Record<string, string | number | undefined>;
+  retryOn5xx?: boolean;
+};
+
 async function request<T>(
   path: string,
-  options: RequestInit & { params?: Record<string, string | number | undefined> } = {},
+  options: RequestOptions = {},
   retryAfterRefresh = false
 ): Promise<T> {
-  const { params, retryOn5xx: _retryOn5xx, ...init } = options as RequestInit & { params?: Record<string, string | number | undefined>; retryOn5xx?: boolean };
+  const { params, retryOn5xx: _retryOn5xx, ...init } = options;
   const pathWithParams = path.startsWith('http')
     ? path
     : `${getApiBase()}${path}`;
@@ -75,8 +80,7 @@ async function request<T>(
   }
 
   // Retry once on 5xx for critical requests (e.g. stream URL)
-  const retryOn5xx = (options as RequestInit & { retryOn5xx?: boolean }).retryOn5xx;
-  if (!res.ok && retryOn5xx && res.status >= 500) {
+  if (!res.ok && options.retryOn5xx && res.status >= 500) {
     await new Promise((r) => setTimeout(r, 800));
     return request<T>(path, { ...options, retryOn5xx: false }, retryAfterRefresh);
   }
