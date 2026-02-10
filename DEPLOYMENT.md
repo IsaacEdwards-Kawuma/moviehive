@@ -286,7 +286,8 @@ When you use an **external** video URL (Bunny, ImageKit, Cloudinary), the app st
 - **"Too many requests" when logging in**  
   The API rate-limits requests per IP (default 500 per 15 minutes). For many users, set a higher limit on Render: **Environment** → add `RATE_LIMIT_MAX` = `2000` or `3000`. Redeploy after changing. Trade-off: higher values give more headroom for real traffic but less protection against a single abusive IP; 2000–3000 is usually fine for a growing app.
 
-- **CORS errors:** Make sure `CORS_ORIGIN` on Render includes your exact frontend domain
+- **CORS errors / “Access-Control-Allow-Origin missing” with status 502:** A **502** means the API did not respond (Render’s gateway returned it). So the “CORS missing” message is a side effect: when the server is down or cold-starting, there is no response from your app, so no CORS headers. Fix: (1) In Render → Environment, set `CORS_ORIGIN` to your exact frontend URL, e.g. `https://your-app.vercel.app` (no trailing slash). (2) Check Render → Logs to see if the API started (e.g. “Server running on…”). If the service was sleeping, the first request can take ~30 s (cold start); retry after a short wait. (3) Confirm the Start Command is `cd apps/server && npm run start` so the DB schema is applied and the server starts.
+- **CORS errors (when API is up):** Make sure `CORS_ORIGIN` on Render includes your exact frontend domain (e.g. `https://your-app.vercel.app`).
 - **Google OAuth fails:** Ensure the callback URL in Google Console matches `GOOGLE_CALLBACK_URL` exactly
 - **Database connection fails:** Check the Neon connection string includes `?sslmode=require`
 - **Build fails on Vercel:** Ensure root directory is set to `apps/web`
