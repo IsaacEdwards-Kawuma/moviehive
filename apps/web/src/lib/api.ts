@@ -56,8 +56,10 @@ async function request<T>(
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Network error';
-    if (msg === 'Failed to fetch' || msg.includes('NetworkError')) {
-      throw new Error('Cannot reach server. Check your connection or try again in a moment.');
+    if (msg === 'Failed to fetch' || msg.includes('NetworkError') || msg.includes('CORS')) {
+      throw new Error(
+        "Can't reach the API server. On free hosting the server may be starting (wait 30–60 seconds and try again). Otherwise check your connection."
+      );
     }
     throw new Error(msg);
   }
@@ -86,6 +88,11 @@ async function request<T>(
   }
 
   if (!res.ok) {
+    if (res.status === 502 || res.status === 503) {
+      throw new Error(
+        "API server isn't responding right now. If you're on free hosting, it may be starting up—wait 30–60 seconds and try again."
+      );
+    }
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || err.message || 'Request failed');
   }
