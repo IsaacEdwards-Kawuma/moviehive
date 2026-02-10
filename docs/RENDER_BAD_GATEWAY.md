@@ -11,17 +11,12 @@ Render may be using an **old start command** that fails (e.g. runs `prisma db pu
 3. Scroll to **Build & Deploy**.
 4. Set **Start Command** to **exactly**:
    ```bash
-   cd apps/server && node dist/index.js
+   cd apps/server && npm run start
    ```
-5. Set **Pre-Deploy Command** to (runs after build, before start; applies DB schema):
-   ```bash
-   cd apps/server && npx prisma db push --accept-data-loss --skip-generate
-   ```
-   If your service was created from the repo’s `render.yaml`, this may already be set when you sync the Blueprint.
-6. Click **Save Changes**.
-7. Go to **Manual Deploy** → **Deploy latest commit** (or wait for the next auto deploy).
+5. Click **Save Changes**.
+6. Go to **Manual Deploy** → **Deploy latest commit** (or wait for the next auto deploy).
 
-The start command only runs the Node server. The pre-deploy command runs Prisma so the schema (including the `slug` column) is applied before each deploy. If the start command was the old `npx prisma db push --skip-generate && node dist/index.js`, it failed on the schema change and the service never started → Bad Gateway.
+The server’s `start` script runs `prisma db push --accept-data-loss --skip-generate` then starts the app, so the DB schema is applied on every start. (Pre-Deploy Command is only available on paid Render plans; on free tier this start command is what keeps the schema in sync.)
 
 ## 2. Check the logs
 

@@ -81,12 +81,9 @@ Wait a few minutes for both to finish. Then test the live site and API.
      ```
    - **Start Command:** paste this exactly:
      ```
-     cd apps/server && node dist/index.js
+     cd apps/server && npm run start
      ```
-  - **Pre-Deploy Command** (recommended; applies DB schema before each deploy):
-     ```
-     cd apps/server && npx prisma db push --accept-data-loss --skip-generate
-     ```
+     (This runs `prisma db push --accept-data-loss --skip-generate` then starts the server, so the DB schema stays in sync on free tier. Pre-Deploy Command is only on paid plans.)
    - **Plan:** Free
 
 5. **Environment Variables** — scroll to **"Environment"** / **"Environment Variables"**:
@@ -287,7 +284,7 @@ When you use an **external** video URL (Bunny, ImageKit, Cloudinary), the app st
 ## Troubleshooting
 
 - **Render "Bad Gateway" / "This service is currently unavailable"**  
-  The API is not running. In Render → your API service → **Settings** → set **Start Command** to: `cd apps/server && node dist/index.js`, and **Pre-Deploy Command** to: `cd apps/server && npx prisma db push --accept-data-loss --skip-generate`. Save and redeploy. See **[docs/RENDER_BAD_GATEWAY.md](docs/RENDER_BAD_GATEWAY.md)** for the full checklist.
+  The API is not running. In Render → your API service → **Settings** → set **Start Command** to: `cd apps/server && npm run start`. Save and redeploy. See **[docs/RENDER_BAD_GATEWAY.md](docs/RENDER_BAD_GATEWAY.md)** for the full checklist.
 
 - **"Too many requests" when logging in**  
   The API rate-limits requests per IP (default 500 per 15 minutes). For many users, set a higher limit on Render: **Environment** → add `RATE_LIMIT_MAX` = `2000` or `3000`. Redeploy after changing. Trade-off: higher values give more headroom for real traffic but less protection against a single abusive IP; 2000–3000 is usually fine for a growing app.
