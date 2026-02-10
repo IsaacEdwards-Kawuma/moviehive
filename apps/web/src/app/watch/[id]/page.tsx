@@ -171,6 +171,9 @@ export default function WatchPage() {
   }
 
   if (isStreamError) {
+    const msg = streamError instanceof Error ? streamError.message : '';
+    const isUnauthorized =
+      msg.toLowerCase().includes('unauthorized') || msg.includes('401') || msg.toLowerCase().includes('sign in');
     return (
       <div className="min-h-screen bg-black flex items-center justify-center px-6">
         <motion.div
@@ -180,22 +183,40 @@ export default function WatchPage() {
         >
           <div className="w-16 h-16 mx-auto mb-4 rounded-full glass flex items-center justify-center">
             <svg className="w-8 h-8 text-stream-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              {isUnauthorized ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              )}
             </svg>
           </div>
-          <h1 className="text-xl font-bold mb-2">Couldn’t load video</h1>
+          <h1 className="text-xl font-bold mb-2">
+            {isUnauthorized ? 'Sign in to watch' : "Couldn't load video"}
+          </h1>
           <p className="text-stream-text-secondary mb-6">
-            {streamError instanceof Error ? streamError.message : 'Check your connection and try again.'}
+            {isUnauthorized
+              ? 'You need to be signed in on this device to play this video. Sign in below or use the same account on each device.'
+              : msg || 'Check your connection and try again.'}
           </p>
-          <Link
-            href={`/title/${contentId}`}
-            className="inline-flex items-center gap-2 bg-stream-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors"
-          >
-            Back to title
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </Link>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {isUnauthorized && (
+              <Link
+                href={`/login?redirect=${encodeURIComponent(`/watch/${contentId}${episodeId ? `?episode=${episodeId}` : ''}`)}`}
+                className="inline-flex items-center gap-2 bg-stream-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors"
+              >
+                Sign in
+              </Link>
+            )}
+            <Link
+              href={`/title/${contentId}`}
+              className="inline-flex items-center gap-2 glass text-white px-6 py-3 rounded-lg font-semibold hover:bg-white/10 transition-colors"
+            >
+              Back to title
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
+          </div>
         </motion.div>
       </div>
     );
@@ -235,11 +256,23 @@ export default function WatchPage() {
 
   if (!videoSrc) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <p className="text-stream-text-secondary">Video not available.</p>
-        <Link href={`/title/${contentId}`} className="ml-2 text-stream-accent hover:underline">
-          Back
-        </Link>
+      <div className="min-h-screen bg-black flex items-center justify-center px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center max-w-md"
+        >
+          <h1 className="text-xl font-bold mb-2">Video not available</h1>
+          <p className="text-stream-text-secondary mb-6">
+            This title may not have a playable video yet, or you may need to sign in. Try going back and signing in if you haven’t.
+          </p>
+          <Link
+            href={`/title/${contentId}`}
+            className="inline-flex items-center gap-2 bg-stream-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors"
+          >
+            Back to title
+          </Link>
+        </motion.div>
       </div>
     );
   }
