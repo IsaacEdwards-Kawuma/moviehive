@@ -109,19 +109,19 @@ export function LoginPage() {
       </motion.header>
 
       {/* Form card */}
-      <div className="flex-1 flex items-center justify-center px-4 relative z-10">
+      <div className="flex-1 flex items-center justify-center px-4 py-6 sm:py-8 relative z-10 overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, y: 40, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="w-full max-w-md glass rounded-2xl p-10 shadow-2xl"
+          className="w-full max-w-md glass rounded-2xl p-6 sm:p-8 md:p-10 shadow-2xl my-auto"
         >
           <motion.h1
             key={isLogin ? 'signin' : 'signup'}
             initial={{ opacity: 0, x: isLogin ? -20 : 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4 }}
-            className="text-3xl font-bold mb-8"
+            className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8"
           >
             {isLogin ? 'Sign In' : 'Sign Up'}
           </motion.h1>

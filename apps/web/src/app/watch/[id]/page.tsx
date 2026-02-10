@@ -257,11 +257,11 @@ export default function WatchPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="absolute top-4 left-0 right-0 z-20 flex items-center justify-between px-4"
+            className="absolute top-3 sm:top-4 left-0 right-0 z-20 flex items-center justify-between px-3 sm:px-4 gap-2"
           >
             <Link
               href={offlineOnly ? `/downloads` : `/title/${contentId}`}
-              className="flex items-center gap-2 text-white/80 hover:text-white transition-colors glass px-4 py-2 rounded-lg"
+              className="flex items-center gap-2 text-white/80 hover:text-white transition-colors glass px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base min-w-0"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

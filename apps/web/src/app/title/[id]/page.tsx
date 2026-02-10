@@ -83,12 +83,12 @@ export default function TitlePage() {
           <div className="absolute inset-0 bg-hero-vignette opacity-40" />
 
           {/* Content info at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 z-10">
+          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-12 z-10">
             <motion.h1
               initial={{ opacity: 0, y: 30, filter: 'blur(8px)' }}
               animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-4xl md:text-6xl font-bold mb-3 text-glow-white"
+              className="text-2xl sm:text-4xl md:text-6xl font-bold mb-2 sm:mb-3 text-glow-white leading-tight"
             >
               {detail.title}
             </motion.h1>
@@ -121,22 +121,22 @@ export default function TitlePage() {
         </div>
 
         {/* Details section */}
-        <div className="px-6 md:px-12 py-8 flex flex-col md:flex-row gap-8">
+        <div className="px-4 sm:px-6 md:px-12 py-6 sm:py-8 flex flex-col md:flex-row gap-6 md:gap-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="flex-1"
+            className="flex-1 min-w-0"
           >
-            <p className="text-stream-text-secondary text-base leading-relaxed mb-8">
+            <p className="text-stream-text-secondary text-sm sm:text-base leading-relaxed mb-6 sm:mb-8">
               {detail.description}
             </p>
 
-            <div className="flex gap-3 flex-wrap">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
                 <Link
                   href={isSeries ? `/watch/${id}?episode=${episodes[0]?.id}` : `/watch/${id}`}
-                  className="flex items-center gap-2 bg-white text-stream-bg px-7 py-3 rounded-lg font-semibold shadow-glow-white hover:shadow-lg transition-all duration-300 text-lg"
+                  className="flex items-center justify-center gap-2 bg-white text-stream-bg px-5 sm:px-7 py-2.5 sm:py-3 rounded-lg font-semibold shadow-glow-white hover:shadow-lg transition-all duration-300 text-base sm:text-lg"
                 >
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
@@ -149,9 +149,9 @@ export default function TitlePage() {
                 type="button"
                 onClick={() => addRemoveMu.mutate()}
                 disabled={!currentProfile?.id || addRemoveMu.isPending}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`flex items-center gap-2 glass px-6 py-3 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 ${
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`flex items-center justify-center gap-2 glass px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 flex-1 sm:flex-initial min-w-0 ${
                   inList ? 'text-stream-accent border border-stream-accent/30' : 'text-white hover:bg-white/10'
                 }`}
               >
@@ -190,23 +190,23 @@ export default function TitlePage() {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6 }}
-              className="w-full md:w-[420px]"
+              className="w-full md:w-[420px] flex-shrink-0"
             >
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <span className="w-1 h-5 bg-stream-accent rounded-full" />
+              <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 flex items-center gap-2">
+                <span className="w-1 h-5 bg-stream-accent rounded-full flex-shrink-0" />
                 Episodes
               </h2>
-              <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
+              <div className="space-y-2 max-h-[400px] sm:max-h-[500px] overflow-y-auto pr-2 -mr-2">
                 {episodes.map((ep, i) => (
                   <motion.div
                     key={ep.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.7 + i * 0.04 }}
-                    className="flex gap-3 p-3 rounded-lg hover:bg-white/5 group transition-all duration-300 card-shine items-center"
+                    className="flex gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg hover:bg-white/5 group transition-all duration-300 card-shine items-center"
                   >
-                    <Link href={`/watch/${id}?episode=${ep.id}`} className="flex gap-3 flex-1 min-w-0">
-                      <div className="w-36 flex-shrink-0 aspect-video rounded-md overflow-hidden bg-stream-dark-gray relative">
+                    <Link href={`/watch/${id}?episode=${ep.id}`} className="flex gap-2 sm:gap-3 flex-1 min-w-0">
+                      <div className="w-24 sm:w-32 md:w-36 flex-shrink-0 aspect-video rounded-md overflow-hidden bg-stream-dark-gray relative">
                         <img
                           src={ep.thumbnailUrl ?? detail.thumbnailUrl ?? ''}
                           alt=""
@@ -221,11 +221,11 @@ export default function TitlePage() {
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium group-hover:text-stream-accent transition-colors">
+                        <p className="font-medium text-sm sm:text-base group-hover:text-stream-accent transition-colors line-clamp-2">
                           S{ep.season} E{ep.episode} {ep.title ?? `Episode ${ep.episode}`}
                         </p>
                         {ep.duration && (
-                          <p className="text-sm text-stream-text-secondary mt-1">{Math.floor(ep.duration / 60)} min</p>
+                          <p className="text-xs sm:text-sm text-stream-text-secondary mt-0.5 sm:mt-1">{Math.floor(ep.duration / 60)} min</p>
                         )}
                       </div>
                     </Link>

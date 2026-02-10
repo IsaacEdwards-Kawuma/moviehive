@@ -43,15 +43,15 @@ export default function MyListPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="pt-24 px-6 md:px-12 pb-12"
+        className="pt-20 sm:pt-24 px-4 sm:px-6 md:px-12 pb-8 sm:pb-12"
       >
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 mb-8"
+          className="flex items-center gap-3 mb-6 sm:mb-8"
         >
-          <span className="w-1.5 h-8 bg-stream-accent rounded-full" />
-          <h1 className="text-3xl font-bold">My List</h1>
+          <span className="w-1.5 h-6 sm:h-8 bg-stream-accent rounded-full flex-shrink-0" />
+          <h1 className="text-2xl sm:text-3xl font-bold">My List</h1>
         </motion.div>
 
         {isLoading ? (

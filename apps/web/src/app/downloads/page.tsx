@@ -93,16 +93,16 @@ export default function DownloadsPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="pt-24 px-6 md:px-12 pb-12"
+        className="pt-20 sm:pt-24 px-4 sm:px-6 md:px-12 pb-8 sm:pb-12"
       >
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8"
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8"
         >
-          <div className="flex items-center gap-3">
-            <span className="w-1.5 h-8 bg-stream-accent rounded-full" />
-            <h1 className="text-3xl font-bold">Downloads</h1>
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="w-1.5 h-6 sm:h-8 bg-stream-accent rounded-full flex-shrink-0" />
+            <h1 className="text-2xl sm:text-3xl font-bold truncate">Downloads</h1>
           </div>
           <p className="text-stream-text-secondary text-sm">
             Watch offline · {formatBytes(storageEstimate.usage)} used

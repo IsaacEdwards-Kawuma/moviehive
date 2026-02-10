@@ -29,12 +29,12 @@ export default function BrowsePage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="pt-24 px-6 md:px-12 pb-12"
+        className="pt-20 sm:pt-24 px-4 sm:px-6 md:px-12 pb-8 sm:pb-12"
       >
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-3xl font-bold mb-2 text-glow-white"
+          className="text-2xl sm:text-3xl font-bold mb-2 text-glow-white"
         >
           Browse
         </motion.h1>
@@ -42,7 +42,7 @@ export default function BrowsePage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-stream-text-secondary mb-8"
+          className="text-stream-text-secondary mb-6 sm:mb-8 text-sm sm:text-base"
         >
           Discover movies and shows
         </motion.p>

@@ -26,6 +26,7 @@ export function Header() {
   const { user, logout } = useAuthStore();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotifItem[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
@@ -92,20 +93,37 @@ export function Header() {
       initial={{ y: -80 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 transition-all duration-500 ${
+      className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 py-2.5 sm:py-3 transition-all duration-500 ${
         scrolled
           ? 'glass shadow-lg'
           : 'bg-gradient-to-b from-black/80 to-transparent'
       }`}
     >
-      <div className="flex items-center gap-8">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <LogoIcon className="w-9 h-9 flex-shrink-0" />
-          <div className="flex flex-col">
-            <span className="text-stream-accent font-bold text-2xl tracking-wider group-hover:text-glow transition-all duration-300 group-hover:tracking-widest">
+      <div className="flex items-center gap-4 sm:gap-8 min-w-0">
+        <button
+          type="button"
+          onClick={() => setMobileNavOpen((o) => !o)}
+          className="md:hidden p-2.5 rounded-lg text-white hover:bg-white/10 transition-colors touch-manipulation"
+          aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileNavOpen}
+        >
+          {mobileNavOpen ? (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
+        <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group min-w-0 flex-shrink-0" onClick={() => setMobileNavOpen(false)}>
+          <LogoIcon className="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0" />
+          <div className="flex flex-col min-w-0">
+            <span className="text-stream-accent font-bold text-lg sm:text-2xl tracking-wider group-hover:text-glow transition-all duration-300 truncate">
               MOVI HIVE
             </span>
-            <span className="text-[10px] md:text-xs text-stream-text-secondary tracking-wide -mt-0.5">
+            <span className="text-[10px] sm:text-xs text-stream-text-secondary tracking-wide -mt-0.5 hidden sm:block">
               Movies, Anytime, Anywhere
             </span>
           </div>
@@ -145,7 +163,54 @@ export function Header() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* Mobile nav overlay */}
+      <AnimatePresence>
+        {mobileNavOpen && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/60 z-40 md:hidden"
+              onClick={() => setMobileNavOpen(false)}
+              aria-hidden
+            />
+            <motion.nav
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+              className="fixed top-[52px] left-0 bottom-0 z-40 w-64 max-w-[85vw] glass border-r border-white/10 flex flex-col pt-6 pb-8 px-4 md:hidden overflow-y-auto"
+            >
+              {nav.map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileNavOpen(false)}
+                  className={`py-3 px-3 rounded-lg text-base font-medium transition-colors ${
+                    pathname === href ? 'text-white bg-white/10' : 'text-stream-text-secondary hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {label}
+                </Link>
+              ))}
+              {user?.role === 'ADMIN' && (
+                <Link
+                  href={adminNav.href}
+                  onClick={() => setMobileNavOpen(false)}
+                  className={`py-3 px-3 rounded-lg text-base font-medium transition-colors ${
+                    pathname === adminNav.href ? 'text-stream-accent bg-stream-accent/10' : 'text-stream-text-secondary hover:text-stream-accent hover:bg-stream-accent/5'
+                  }`}
+                >
+                  {adminNav.label}
+                </Link>
+              )}
+              <div className="mt-auto pt-4 border-t border-white/10">
+                <p className="px-3 text-xs text-stream-text-secondary">Movies, Anytime, Anywhere</p>
+              </div>
+            </motion.nav>
+          </>
+        )}
+      </AnimatePresence>
+
+      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
         {/* Search */}
         <Link
           href="/search"
@@ -194,7 +259,7 @@ export function Header() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute right-0 mt-2 w-80 max-h-[70vh] glass rounded-xl shadow-2xl z-20 flex flex-col overflow-hidden"
+                  className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-2rem))] max-h-[70vh] glass rounded-xl shadow-2xl z-20 flex flex-col overflow-hidden"
                 >
                   <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
                     <h3 className="font-semibold text-sm">Notifications</h3>

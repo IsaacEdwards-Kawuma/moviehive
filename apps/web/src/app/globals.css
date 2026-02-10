@@ -32,6 +32,17 @@ body {
   overflow-x: hidden;
   background: var(--bg-primary);
   color: var(--text-primary);
+  /* Safe area for notched devices (e.g. iPhone) */
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Minimum touch target and readable text on small screens */
+@media (max-width: 640px) {
+  body {
+    font-size: 16px; /* prevents iOS zoom on input focus */
+  }
 }
 
 body {

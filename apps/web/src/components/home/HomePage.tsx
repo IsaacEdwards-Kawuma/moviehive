@@ -48,7 +48,7 @@ export function HomePage() {
         transition={{ duration: 0.5 }}
       >
         <Hero featured={featured} />
-        <div className="relative z-10 -mt-20">
+        <div className="relative z-10 -mt-16 sm:-mt-20">
           {continueWatching.length > 0 && (
             <ContentRow
               title="Continue Watching"

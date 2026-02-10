@@ -38,25 +38,25 @@ export function ContentRow({
   if (items.length === 0) return null;
 
   return (
-    <section ref={sectionRef} className="py-6 pl-6 md:pl-12 overflow-hidden">
+    <section ref={sectionRef} className="py-4 sm:py-6 pl-4 sm:pl-6 md:pl-12 pr-4 sm:pr-0 overflow-hidden">
       {/* Animated section title */}
       <motion.h2
         initial={{ opacity: 0, x: -30 }}
         animate={isInView ? { opacity: 1, x: 0 } : {}}
         transition={{ duration: 0.5 }}
-        className="text-xl font-bold mb-4 flex items-center gap-3"
+        className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3"
       >
-        <span className="w-1 h-6 bg-stream-accent rounded-full inline-block" />
-        {title}
+        <span className="w-1 h-5 sm:h-6 bg-stream-accent rounded-full inline-block flex-shrink-0" />
+        <span className="truncate">{title}</span>
       </motion.h2>
 
       <div className="relative group">
-        {/* Scroll buttons with glow */}
+        {/* Scroll buttons: on touch devices show when scrollable; on hover devices show on hover */}
         <button
           type="button"
           onClick={() => scroll('left')}
-          className={`absolute left-0 top-0 bottom-0 z-10 w-14 flex items-center justify-center bg-gradient-to-r from-stream-bg to-transparent transition-all duration-300 cursor-pointer ${
-            canScrollLeft ? 'opacity-0 group-hover:opacity-100' : 'opacity-0 pointer-events-none'
+          className={`absolute left-0 top-0 bottom-0 z-10 w-10 sm:w-14 flex items-center justify-center bg-gradient-to-r from-stream-bg to-transparent transition-all duration-300 cursor-pointer touch-manipulation ${
+            canScrollLeft ? 'opacity-80 sm:opacity-0 sm:group-hover:opacity-100' : 'opacity-0 pointer-events-none'
           }`}
           aria-label="Scroll left"
         >
@@ -70,8 +70,8 @@ export function ContentRow({
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex gap-2 overflow-x-auto overflow-y-hidden scroll-smooth pr-12"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          className="flex gap-2 sm:gap-3 overflow-x-auto overflow-y-hidden scroll-smooth pr-10 sm:pr-12"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {items.map((item, i) => (
             <motion.div
@@ -79,7 +79,7 @@ export function ContentRow({
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
               transition={{ delay: Math.min(i * 0.05, 0.4), duration: 0.5, ease: 'easeOut' }}
-              className="flex-shrink-0 w-[180px] md:w-[240px]"
+              className="flex-shrink-0 w-[150px] sm:w-[180px] md:w-[240px]"
             >
               <Link href={`/title/${item.id}`} className="block group/card">
                 <div className="relative aspect-video rounded-lg overflow-hidden bg-stream-dark-gray shadow-card card-shine transition-all duration-400 group-hover/card:shadow-card-hover group-hover/card:scale-[1.08] group-hover/card:z-10">
@@ -134,8 +134,8 @@ export function ContentRow({
         <button
           type="button"
           onClick={() => scroll('right')}
-          className={`absolute right-0 top-0 bottom-0 z-10 w-14 flex items-center justify-center bg-gradient-to-l from-stream-bg to-transparent transition-all duration-300 cursor-pointer ${
-            canScrollRight ? 'opacity-0 group-hover:opacity-100' : 'opacity-0 pointer-events-none'
+          className={`absolute right-0 top-0 bottom-0 z-10 w-10 sm:w-14 flex items-center justify-center bg-gradient-to-l from-stream-bg to-transparent transition-all duration-300 cursor-pointer touch-manipulation ${
+            canScrollRight ? 'opacity-80 sm:opacity-0 sm:group-hover:opacity-100' : 'opacity-0 pointer-events-none'
           }`}
           aria-label="Scroll right"
         >
