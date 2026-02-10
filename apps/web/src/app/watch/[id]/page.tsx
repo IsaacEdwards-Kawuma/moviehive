@@ -2,7 +2,7 @@
 
 import { useParams, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useRef, useEffect, useState } from 'react';
+import { useCallback, useRef, useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
@@ -37,6 +37,16 @@ export default function WatchPage() {
     queryKey: ['content', contentId],
     queryFn: () => api.content.get(contentId),
     enabled: !!contentId && !!streamData?.url,
+  });
+
+  const { data: watchHistory } = useQuery({
+    queryKey: ['watch-history', 'resume', currentProfile?.id, contentId],
+    queryFn: () => {
+      if (!currentProfile?.id) return Promise.resolve([]);
+      return api.watchHistory.list(currentProfile.id);
+    },
+    enabled: !!currentProfile?.id && !!contentId,
+    staleTime: 60_000,
   });
 
   const offlineUrlRef = useRef<string | null>(null);
@@ -117,6 +127,19 @@ export default function WatchPage() {
   const isImageUrl =
     typeof streamData?.url === 'string' && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(streamData.url);
   const videoSrc = offlineUrl ?? (!offlineOnly && streamUrl && !isImageUrl ? streamUrl : null);
+  const resumeItem = useMemo(
+    () =>
+      (watchHistory ?? []).find(
+        (h) =>
+          h.contentId === contentId &&
+          ((episodeId && h.episodeId === episodeId) || (!episodeId && h.episodeId === null))
+      ),
+    [watchHistory, contentId, episodeId]
+  );
+  const initialTime =
+    !offlineOnly && resumeItem && !resumeItem.completed && resumeItem.progress > 10
+      ? resumeItem.progress
+      : 0;
   const waitingForOffline = offlineOnly && !offlineChecked;
   const offlineNotFound = offlineOnly && offlineChecked && !offlineUrl;
   const waitingForStream =
@@ -319,6 +342,7 @@ export default function WatchPage() {
 
       <VideoPlayer
         src={videoSrc}
+        initialTime={initialTime}
         onTimeUpdate={(t) => {
           progressRef.current = Math.round(t);
           saveProgress(progressRef.current, false);

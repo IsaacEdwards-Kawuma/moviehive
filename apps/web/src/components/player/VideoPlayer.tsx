@@ -39,11 +39,12 @@ function getPlaybackErrorMessage(code: number | undefined, wasPlaying: boolean):
 
 interface VideoPlayerProps {
   src: string;
+  initialTime?: number;
   onTimeUpdate?: (seconds: number) => void;
   onEnded?: () => void;
 }
 
-export function VideoPlayer({ src, onTimeUpdate, onEnded }: VideoPlayerProps) {
+export function VideoPlayer({ src, initialTime = 0, onTimeUpdate, onEnded }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const hadStartedPlayingRef = useRef(false);
@@ -165,6 +166,13 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded }: VideoPlayerProps) {
         video.appendChild(source);
         video.load();
         video.addEventListener('loadeddata', () => {
+          if (initialTime && initialTime > 0) {
+            try {
+              video.currentTime = initialTime;
+            } catch {
+              // ignore seek errors
+            }
+          }
           hadStartedPlayingRef.current = true;
           video.play().catch(() => {});
         }, { once: true });
@@ -199,7 +207,7 @@ export function VideoPlayer({ src, onTimeUpdate, onEnded }: VideoPlayerProps) {
         hlsRef.current = null;
       }
     };
-  }, [src, retryKey]);
+  }, [src, initialTime, retryKey]);
 
   return (
     <div className="relative w-full h-screen bg-black">
