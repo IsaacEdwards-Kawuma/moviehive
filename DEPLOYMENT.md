@@ -79,10 +79,11 @@ Wait a few minutes for both to finish. Then test the live site and API.
      ```
      npm install && cd apps/server && npx prisma generate && cd ../.. && npm run build -w @stream/shared && npm run build:server
      ```
-   - **Start Command:** paste this exactly (required for schema with unique `slug` on Content):
+   - **Start Command:** paste this exactly:
      ```
-     cd apps/server && npx prisma db push --accept-data-loss --skip-generate && node dist/index.js
+     cd apps/server && npm run start
      ```
+     (The server’s `start` script runs `prisma db push --accept-data-loss --skip-generate` then starts the app.)
    - **Plan:** Free
 
 5. **Environment Variables** — scroll to **"Environment"** / **"Environment Variables"**:
