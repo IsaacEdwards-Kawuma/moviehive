@@ -1,6 +1,7 @@
 import { Router, type Request } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { requireAuth, signStreamProxyToken, verifyStreamProxyToken } from '../lib/auth.js';
+import { signStreamProxyToken, verifyStreamProxyToken } from '../lib/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 
 export const streamRouter = Router();
 
@@ -73,7 +74,7 @@ streamRouter.get('/:contentId/url', requireAuth, async (req, res) => {
   const token = signStreamProxyToken({
     contentId,
     episodeId: typeof episodeId === 'string' ? episodeId : undefined,
-    userId: user.id,
+    userId,
   });
   const proxyPath = `/api/stream/${contentId}/proxy?t=${encodeURIComponent(token)}`;
   const proxyUrl = `${baseUrl}${proxyPath}`;
