@@ -354,7 +354,7 @@ export default function AdminDashboard() {
                         >
                           Delete
                         </button>
-                        <Link href={`/title/${c.id}`} target="_blank" className="text-stream-text-secondary hover:text-white text-sm">
+                        <Link href={`/title/${c.slug ?? c.id}`} target="_blank" className="text-stream-text-secondary hover:text-white text-sm">
                           View
                         </Link>
                       </td>

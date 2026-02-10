@@ -145,6 +145,7 @@ export function LoginPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
+              className={isLogin ? '' : ''}
             >
               <input
                 type="password"
@@ -155,6 +156,14 @@ export function LoginPage() {
                 required
                 minLength={isLogin ? 1 : 8}
               />
+              {isLogin && (
+                <Link
+                  href="/forgot-password"
+                  className="inline-block mt-2 text-sm text-stream-text-secondary hover:text-stream-accent transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              )}
             </motion.div>
 
             <AnimatePresence>

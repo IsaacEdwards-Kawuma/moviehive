@@ -18,6 +18,8 @@ model User {
   emailVerified     Boolean   @default(false) @map("email_verified")
   twoFactorEnabled  Boolean   @default(false) @map("two_factor_enabled")
   twoFactorSecret   String?   @map("two_factor_secret")
+  passwordResetToken   String?   @map("password_reset_token")
+  passwordResetExpires DateTime? @map("password_reset_expires")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
@@ -64,6 +66,7 @@ model Profile {
 
 model Content {
   id           String    @id @default(uuid())
+  slug         String?   @unique  // URL-friendly, e.g. the-dark-knight
   type         String    // movie | series
   title        String
   description  String?
@@ -94,6 +97,7 @@ model Content {
   @@index([featured])
   @@index([releaseYear])
   @@index([createdAt])
+  @@index([slug])
 }
 
 model Episode {

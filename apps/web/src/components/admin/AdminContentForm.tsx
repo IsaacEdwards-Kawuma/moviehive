@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api, { type AdminContentCreate, type AdminContentDetail, type AdminEpisodeCreate } from '@/lib/api';
 import { FileUpload } from './FileUpload';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 export function AdminContentForm({
   contentId,
@@ -48,6 +49,8 @@ export function AdminContentForm({
     thumbnailUrl: '',
   });
   const [addingEpisode, setAddingEpisode] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, { onClose, active: !loading });
 
   useEffect(() => {
     setGenresLoading(true);
@@ -141,10 +144,10 @@ export function AdminContentForm({
 
   return (
     <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/70 flex items-start justify-center p-4">
-      <div className="bg-stream-dark-gray rounded-lg max-w-2xl w-full my-8 shadow-xl">
+      <div ref={modalRef} className="bg-stream-dark-gray rounded-lg max-w-2xl w-full my-8 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="admin-content-form-title">
         <div className="flex items-center justify-between p-4 border-b border-stream-gray">
-          <h2 className="text-xl font-bold">{isEdit ? 'Edit content' : 'Add content'}</h2>
-          <button type="button" onClick={onClose} className="text-stream-text-secondary hover:text-white text-2xl">
+          <h2 id="admin-content-form-title" className="text-xl font-bold">{isEdit ? 'Edit content' : 'Add content'}</h2>
+          <button type="button" onClick={onClose} className="text-stream-text-secondary hover:text-white text-2xl" aria-label="Close">
             ×
           </button>
         </div>

@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { type ContentDetail } from '@/lib/api';
@@ -10,12 +11,29 @@ import { Header } from '@/components/layout/Header';
 import { DownloadButton } from '@/components/player/DownloadButton';
 import { useToast } from '@/context/ToastContext';
 
+/** Returns YouTube embed URL or null if not YouTube. */
+function getYouTubeEmbedUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\./, '');
+    if (host === 'youtube.com' || host === 'youtu.be') {
+      let vid = u.searchParams.get('v') ?? null;
+      if (host === 'youtu.be') vid = u.pathname.slice(1).split('/')[0] || null;
+      if (vid) return `https://www.youtube.com/embed/${vid}?autoplay=1`;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 export default function TitlePage() {
   const params = useParams();
   const id = params?.id as string;
   const { currentProfile } = useProfileStore();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const [trailerOpen, setTrailerOpen] = useState(false);
 
   const { data: content, isLoading } = useQuery({
     queryKey: ['content', id],
@@ -65,6 +83,9 @@ export default function TitlePage() {
   const detail = content as ContentDetail;
   const isSeries = detail.type === 'series';
   const episodes = detail.episodes ?? [];
+  const trailerUrl = detail.trailerUrl?.trim() || null;
+  const trailerEmbedUrl = useMemo(() => (trailerUrl ? getYouTubeEmbedUrl(trailerUrl) : null), [trailerUrl]);
+  const isTrailerYouTube = !!trailerEmbedUrl;
 
   return (
     <div className="min-h-screen bg-stream-bg">
@@ -156,6 +177,20 @@ export default function TitlePage() {
                 </Link>
               </motion.div>
 
+              {trailerUrl && (
+                <motion.button
+                  type="button"
+                  onClick={() => setTrailerOpen(true)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center justify-center gap-2 glass px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold transition-all duration-300 hover:bg-white/10"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                  </svg>
+                  Play trailer
+                </motion.button>
+              )}
               <motion.button
                 type="button"
                 onClick={() => addRemoveMu.mutate()}
@@ -303,6 +338,54 @@ export default function TitlePage() {
           )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {trailerOpen && trailerUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+            onClick={() => setTrailerOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-4xl aspect-video bg-black rounded-xl overflow-hidden shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setTrailerOpen(false)}
+                className="absolute top-2 right-2 z-10 w-10 h-10 rounded-full glass flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                aria-label="Close trailer"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              {isTrailerYouTube ? (
+                <iframe
+                  src={trailerEmbedUrl!}
+                  title="Trailer"
+                  className="absolute inset-0 w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <video
+                  src={trailerUrl}
+                  controls
+                  autoPlay
+                  className="w-full h-full object-contain"
+                  onEnded={() => setTrailerOpen(false)}
+                />
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -25,6 +25,7 @@ export interface Profile {
 
 export interface Content {
   id: string;
+  slug: string | null;
   type: ContentType;
   title: string;
   description: string | null;

@@ -26,6 +26,32 @@ async function notifyAllUsers(notification: {
   });
 }
 
+function slugFromTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || 'content';
+}
+
+async function ensureUniqueSlug(baseSlug: string, excludeContentId?: string): Promise<string> {
+  let slug = baseSlug;
+  let n = 0;
+  for (;;) {
+    const existing = await prisma.content.findFirst({
+      where: {
+        slug,
+        ...(excludeContentId ? { id: { not: excludeContentId } } : {}),
+      },
+    });
+    if (!existing) return slug;
+    n += 1;
+    slug = `${baseSlug}-${n}`;
+  }
+}
+
 const contentCreateSchema = z.object({
   type: z.enum(['movie', 'series']),
   title: z.string().min(1).max(255),
@@ -41,6 +67,7 @@ const contentCreateSchema = z.object({
   genreIds: z.array(z.string().uuid()).optional(),
   languages: z.array(z.string()).optional(),
   regions: z.array(z.string()).optional(),
+  slug: z.string().max(255).optional().nullable(),
 });
 
 const contentUpdateSchema = contentCreateSchema.partial();
@@ -157,10 +184,13 @@ router.post('/content', requireAuth, requireAdmin, async (req, res) => {
     if (!parsed.success) {
       return res.status(400).json({ message: 'Invalid input', details: parsed.error.flatten() });
     }
-    const { genreIds, ...rest } = parsed.data;
+    const { genreIds, slug: slugInput, ...rest } = parsed.data;
+    const baseSlug = slugInput && slugInput.trim() ? slugFromTitle(slugInput) : slugFromTitle(rest.title);
+    const slug = await ensureUniqueSlug(baseSlug);
     const content = await prisma.content.create({
       data: {
         ...rest,
+        slug,
         featured: rest.featured ?? false,
         languages: rest.languages ?? [],
         regions: rest.regions ?? [],
@@ -175,11 +205,12 @@ router.post('/content', requireAuth, requireAdmin, async (req, res) => {
     });
 
     // Broadcast notification to all users
+    const titleLink = content.slug ? `/title/${content.slug}` : `/title/${content.id}`;
     notifyAllUsers({
       type: 'new_release',
       title: `New ${rest.type === 'series' ? 'series' : 'movie'}: ${rest.title}`,
       body: rest.description?.slice(0, 160) ?? `A new ${rest.type} has been added to Movie Hive.`,
-      link: `/title/${content.id}`,
+      link: titleLink,
     }).catch((err) => console.error('Failed to send notifications:', err));
 
     res.status(201).json(content);
@@ -215,7 +246,18 @@ router.put('/content/:id', requireAuth, requireAdmin, async (req, res) => {
     if (!parsed.success) {
       return res.status(400).json({ message: 'Invalid input', details: parsed.error.flatten() });
     }
-    const { genreIds, ...rest } = parsed.data;
+    const { genreIds, slug: slugInput, title, ...rest } = parsed.data;
+    let slugUpdate: { slug?: string } = {};
+    if (slugInput !== undefined || title !== undefined) {
+      const baseSlug = slugInput && String(slugInput).trim()
+        ? slugFromTitle(String(slugInput))
+        : title
+          ? slugFromTitle(title)
+          : null;
+      if (baseSlug) {
+        slugUpdate.slug = await ensureUniqueSlug(baseSlug, id);
+      }
+    }
     if (genreIds !== undefined) {
       await prisma.contentGenre.deleteMany({ where: { contentId: id } });
       if (genreIds.length > 0) {
@@ -226,7 +268,7 @@ router.put('/content/:id', requireAuth, requireAdmin, async (req, res) => {
     }
     const content = await prisma.content.update({
       where: { id },
-      data: rest,
+      data: { ...rest, ...slugUpdate },
       include: {
         contentGenres: { include: { genre: true } },
         episodes: true,

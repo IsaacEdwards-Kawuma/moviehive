@@ -92,7 +92,7 @@ export function Hero({ featured }: { featured: ContentDetail | null | undefined 
             Play
           </Link>
           <Link
-            href={`/title/${featured.id}`}
+            href={`/title/${featured.slug ?? featured.id}`}
             className="group flex items-center gap-2 glass px-7 py-3 rounded-md font-semibold text-lg hover:bg-white/10 hover:scale-105 transition-all duration-300"
           >
             <svg className="w-5 h-5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -88,12 +88,15 @@ contentRouter.get('/featured', async (_req, res) => {
   res.json(item ?? null);
 });
 
+function isUuid(s: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
+}
+
 contentRouter.get('/:id', optionalAuth, async (req, res) => {
   const { id } = req.params;
-  const content = await prisma.content.findUnique({
-    where: { id },
-    include: contentInclude,
-  });
+  const content = isUuid(id)
+    ? await prisma.content.findUnique({ where: { id }, include: contentInclude })
+    : await prisma.content.findFirst({ where: { slug: id }, include: contentInclude });
   if (!content) {
     res.status(404).json({ error: 'Content not found' });
     return;
@@ -103,8 +106,11 @@ contentRouter.get('/:id', optionalAuth, async (req, res) => {
 
 contentRouter.get('/:id/episodes', async (req, res) => {
   const { id } = req.params;
-  const content = await prisma.content.findUnique({
-    where: { id, type: 'series' },
+  const where = isUuid(id)
+    ? { id, type: 'series' as const }
+    : { slug: id, type: 'series' as const };
+  const content = await prisma.content.findFirst({
+    where,
     include: { episodes: { orderBy: [...episodeOrderBy] } },
   });
   if (!content) {

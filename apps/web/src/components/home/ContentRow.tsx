@@ -102,7 +102,7 @@ export function ContentRow({
               transition={{ delay: Math.min(i * 0.05, 0.4), duration: 0.5, ease: 'easeOut' }}
               className="flex-shrink-0 w-[150px] sm:w-[180px] md:w-[240px]"
             >
-              <Link href={`/title/${item.id}`} className="block group/card">
+              <Link href={`/title/${item.slug ?? item.id}`} className="block group/card">
                 <div className="relative aspect-video rounded-lg overflow-hidden bg-stream-dark-gray shadow-card card-shine transition-all duration-400 group-hover/card:shadow-card-hover group-hover/card:scale-[1.08] group-hover/card:z-10">
                   <img
                     src={item.thumbnailUrl ?? item.posterUrl ?? ''}

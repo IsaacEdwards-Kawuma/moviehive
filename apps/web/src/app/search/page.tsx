@@ -161,7 +161,7 @@ export default function SearchPage() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ delay: i * 0.03 }}
                 >
-                  <Link href={`/title/${item.id}`} className="group block">
+                  <Link href={`/title/${item.slug ?? item.id}`} className="group block">
                     <div className="aspect-video rounded-lg overflow-hidden bg-stream-dark-gray shadow-card card-shine group-hover:shadow-card-hover group-hover:scale-[1.05] transition-all duration-400">
                       <img
                         src={item.thumbnailUrl ?? item.posterUrl ?? ''}

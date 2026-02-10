@@ -89,7 +89,7 @@ export default function MyListPage() {
                   transition={{ delay: i * 0.04 }}
                   className="group"
                 >
-                  <Link href={`/title/${item.id}`} className="block">
+                  <Link href={`/title/${item.slug ?? item.id}`} className="block">
                     <div className="aspect-video rounded-lg overflow-hidden bg-stream-dark-gray shadow-card card-shine group-hover:shadow-card-hover group-hover:scale-[1.05] transition-all duration-400">
                       <img
                         src={item.thumbnailUrl ?? item.posterUrl ?? ''}

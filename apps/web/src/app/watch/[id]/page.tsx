@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
 import { useProfileStore } from '@/store/useProfileStore';
-import { VideoPlayer } from '@/components/player/VideoPlayer';
+import { VideoPlayer, type VideoPlayerHandle } from '@/components/player/VideoPlayer';
 import { CastButton } from '@/components/player/CastButton';
 import { useOfflineDownloads } from '@/hooks/useOfflineDownloads';
 
@@ -32,6 +32,10 @@ export default function WatchPage() {
     title: string | null;
   } | null>(null);
   const router = useRouter();
+  const videoPlayerRef = useRef<VideoPlayerHandle>(null);
+  const lastTapRef = useRef<{ time: number; x: number }>({ time: 0, x: 0 });
+  const SEEK_DELTA = 10;
+  const DOUBLE_TAP_MS = 400;
 
   const { data: streamData, isLoading, isError: isStreamError, error: streamError } = useQuery({
     queryKey: ['stream', contentId, episodeId],
@@ -307,11 +311,56 @@ export default function WatchPage() {
     );
   }
 
+  const handleStartOver = useCallback(() => {
+    videoPlayerRef.current?.seekTo(0);
+    progressRef.current = 0;
+    if (currentProfile?.id) {
+      api.watchHistory
+        .update({
+          profileId: currentProfile.id,
+          contentId,
+          episodeId: episodeId ?? null,
+          progress: 0,
+          completed: false,
+        })
+        .catch(() => {});
+    }
+    resetUITimeout();
+  }, [currentProfile?.id, contentId, episodeId, resetUITimeout]);
+
+  const handleDoubleTapSeek = useCallback(
+    (clientX: number) => {
+      const container = document.querySelector('[data-watch-video-container]');
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const width = rect.width;
+      const now = Date.now();
+      const last = lastTapRef.current;
+      if (now - last.time <= DOUBLE_TAP_MS && Math.abs(x - last.x) < 80) {
+        const currentTime = videoPlayerRef.current?.getCurrentTime() ?? 0;
+        const leftHalf = x < width / 2;
+        const newTime = leftHalf
+          ? Math.max(0, currentTime - SEEK_DELTA)
+          : currentTime + SEEK_DELTA;
+        videoPlayerRef.current?.seekTo(newTime);
+        lastTapRef.current = { time: 0, x: 0 };
+        return;
+      }
+      lastTapRef.current = { time: now, x };
+    },
+    []
+  );
+
   return (
     <div
       className="min-h-screen bg-black relative"
       onMouseMove={resetUITimeout}
       onClick={resetUITimeout}
+      data-watch-video-container
+      onTouchEnd={(e) => {
+        if (e.changedTouches?.[0]) handleDoubleTapSeek(e.changedTouches[0].clientX);
+      }}
     >
       <AnimatePresence>
         {showUI && (
@@ -331,23 +380,39 @@ export default function WatchPage() {
               </svg>
               Back
             </Link>
-            {!offlineOnly && streamData?.url && (
-              <CastButton
-                media={{
-                  url: streamData.url,
-                  title: contentDetail?.title ?? undefined,
-                  posterUrl: contentDetail?.posterUrl ?? contentDetail?.thumbnailUrl ?? undefined,
-                  currentTime: progressRef.current,
-                }}
-                className="glass px-3 py-2"
-                title="Cast to TV or device"
-              />
-            )}
+            <div className="flex items-center gap-2">
+              {initialTime > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleStartOver();
+                  }}
+                  className="glass px-3 py-2 rounded-lg text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  Start over
+                </button>
+              )}
+              {!offlineOnly && streamData?.url && (
+                <CastButton
+                  media={{
+                    url: streamData.url,
+                    title: contentDetail?.title ?? undefined,
+                    posterUrl: contentDetail?.posterUrl ?? contentDetail?.thumbnailUrl ?? undefined,
+                    currentTime: progressRef.current,
+                  }}
+                  className="glass px-3 py-2"
+                  title="Cast to TV or device"
+                />
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       <VideoPlayer
+        ref={videoPlayerRef}
         src={videoSrc}
         initialTime={initialTime}
         onTimeUpdate={(t) => {

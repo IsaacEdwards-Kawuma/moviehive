@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/Providers';
+import { SentryInit } from '@/components/SentryInit';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
   title: 'MOVI HIVE - Movies, Anytime, Anywhere',
   description: 'MOVI HIVE — movies and TV shows. Watch anytime, anywhere.',
   icons: { icon: '/icon.svg' },
+  manifest: '/manifest.json',
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'MOVI HIVE' },
 };
 
 export const viewport = {
@@ -32,6 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className={`min-h-screen bg-stream-bg text-stream-text-primary antialiased ${inter.className}`}>
+        <SentryInit />
         <Providers>{children}</Providers>
       </body>
     </html>

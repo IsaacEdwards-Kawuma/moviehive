@@ -1,7 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import Hls from 'hls.js';
+
+export interface VideoPlayerHandle {
+  seekTo: (seconds: number) => void;
+  getCurrentTime: () => number;
+}
 
 /** Infer MIME type from URL so the browser can choose the right codec. */
 function getVideoType(url: string): string | undefined {
@@ -46,13 +51,30 @@ interface VideoPlayerProps {
   onEnded?: () => void;
 }
 
-export function VideoPlayer({ src, initialTime = 0, trackUrl, onTimeUpdate, onEnded }: VideoPlayerProps) {
+export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function VideoPlayer(
+  { src, initialTime = 0, trackUrl, onTimeUpdate, onEnded },
+  ref
+) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const hadStartedPlayingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [checkingUrl, setCheckingUrl] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+
+  useImperativeHandle(ref, () => ({
+    seekTo(seconds: number) {
+      const video = videoRef.current;
+      if (video) {
+        const duration = Number.isFinite(video.duration) ? video.duration : 1e6;
+        video.currentTime = Math.max(0, Math.min(seconds, duration));
+        onTimeUpdate?.(video.currentTime);
+      }
+    },
+    getCurrentTime() {
+      return videoRef.current?.currentTime ?? 0;
+    },
+  }), [onTimeUpdate]);
 
   // Attach time/end listeners
   useEffect(() => {
@@ -301,4 +323,4 @@ export function VideoPlayer({ src, initialTime = 0, trackUrl, onTimeUpdate, onEn
       )}
     </div>
   );
-}
+});
