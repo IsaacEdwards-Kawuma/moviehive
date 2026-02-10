@@ -26,6 +26,8 @@ export default function AdminDashboard() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [contentFormOpen, setContentFormOpen] = useState(false);
   const [editingContentId, setEditingContentId] = useState<string | null>(null);
+  const [selectedContentIds, setSelectedContentIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const loadOverview = async () => {
     const [statsRes, usersRes] = await Promise.all([api.admin.getStats(), api.admin.getUsers()]);
@@ -91,8 +93,51 @@ export default function AdminDashboard() {
       await api.admin.deleteContent(id);
       setContentList((prev) => prev.filter((c) => c.id !== id));
       setContentTotal((t) => Math.max(0, t - 1));
+      setSelectedContentIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
     } catch (e) {
       alert('Failed to delete');
+    }
+  };
+
+  const handleBulkDeleteContent = async () => {
+    if (selectedContentIds.size === 0) return;
+    if (!confirm(`Delete ${selectedContentIds.size} item(s)? This cannot be undone.`)) return;
+    setBulkDeleting(true);
+    try {
+      await api.admin.bulkDeleteContent([...selectedContentIds]);
+      setSelectedContentIds(new Set());
+      await loadContent(contentPage);
+      loadOverview();
+    } catch {
+      alert('Failed to delete some or all items.');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  const toggleContentSelection = (id: string) => {
+    setSelectedContentIds((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  };
+
+  const selectAllContentOnPage = () => {
+    const allSelected = contentList.every((c) => selectedContentIds.has(c.id));
+    if (allSelected) {
+      setSelectedContentIds((prev) => {
+        const n = new Set(prev);
+        contentList.forEach((c) => n.delete(c.id));
+        return n;
+      });
+    } else {
+      setSelectedContentIds((prev) => {
+        const n = new Set(prev);
+        contentList.forEach((c) => n.add(c.id));
+        return n;
+      });
     }
   };
 
@@ -235,19 +280,40 @@ export default function AdminDashboard() {
           <>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
               <h1 className="text-2xl font-bold">Content</h1>
-              <button
-                type="button"
-                onClick={() => { setEditingContentId(null); setContentFormOpen(true); }}
-                className="bg-stream-accent text-white px-4 py-2 rounded font-medium hover:bg-red-600"
-              >
-                + Add content
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                {selectedContentIds.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleBulkDeleteContent}
+                    disabled={bulkDeleting}
+                    className="bg-red-600 text-white px-4 py-2 rounded font-medium hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {bulkDeleting ? 'Deleting…' : `Delete selected (${selectedContentIds.size})`}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setEditingContentId(null); setContentFormOpen(true); }}
+                  className="bg-stream-accent text-white px-4 py-2 rounded font-medium hover:bg-red-600"
+                >
+                  + Add content
+                </button>
+              </div>
             </div>
             <div className="bg-stream-dark-gray rounded overflow-hidden">
               <div className="overflow-x-auto">
               <table className="w-full min-w-[700px]">
                 <thead className="bg-stream-black">
                   <tr>
+                    <th className="p-4 w-10">
+                      <input
+                        type="checkbox"
+                        checked={contentList.length > 0 && contentList.every((c) => selectedContentIds.has(c.id))}
+                        onChange={selectAllContentOnPage}
+                        aria-label="Select all on page"
+                        className="rounded border-stream-gray"
+                      />
+                    </th>
                     <th className="p-4 text-left text-sm font-medium">Title</th>
                     <th className="p-4 text-left text-sm font-medium">Type</th>
                     <th className="p-4 text-left text-sm font-medium">Year</th>
@@ -259,6 +325,15 @@ export default function AdminDashboard() {
                 <tbody>
                   {contentList.map((c) => (
                     <tr key={c.id} className="border-t border-stream-gray">
+                      <td className="p-4 w-10">
+                        <input
+                          type="checkbox"
+                          checked={selectedContentIds.has(c.id)}
+                          onChange={() => toggleContentSelection(c.id)}
+                          aria-label={`Select ${c.title}`}
+                          className="rounded border-stream-gray"
+                        />
+                      </td>
                       <td className="p-4 font-medium">{c.title}</td>
                       <td className="p-4 capitalize">{c.type}</td>
                       <td className="p-4 text-stream-text-secondary">{c.releaseYear ?? '—'}</td>

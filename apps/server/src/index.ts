@@ -78,6 +78,27 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Stricter limit for auth (login/register) to reduce brute-force risk
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { error: 'Too many login attempts. Try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
+// Stricter limit for stream proxy (per-IP streaming abuse)
+const streamProxyLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 min
+  max: 120,
+  message: { error: 'Too many stream requests. Slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/stream', streamProxyLimiter);
+
 app.use('/api/auth', authRouter);
 app.use('/api/auth', googleAuthRouter);
 app.use('/api/profiles', profilesRouter);

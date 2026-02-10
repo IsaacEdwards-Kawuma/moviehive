@@ -40,11 +40,13 @@ function getPlaybackErrorMessage(code: number | undefined, wasPlaying: boolean):
 interface VideoPlayerProps {
   src: string;
   initialTime?: number;
+  /** Optional WebVTT or similar subtitle track URL */
+  trackUrl?: string;
   onTimeUpdate?: (seconds: number) => void;
   onEnded?: () => void;
 }
 
-export function VideoPlayer({ src, initialTime = 0, onTimeUpdate, onEnded }: VideoPlayerProps) {
+export function VideoPlayer({ src, initialTime = 0, trackUrl, onTimeUpdate, onEnded }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const hadStartedPlayingRef = useRef(false);
@@ -65,6 +67,54 @@ export function VideoPlayer({ src, initialTime = 0, onTimeUpdate, onEnded }: Vid
       video.removeEventListener('ended', handleEnded);
     };
   }, [onTimeUpdate, onEnded]);
+
+  // Keyboard shortcuts: Space = play/pause, M = mute, F = fullscreen, arrows = seek/volume
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+      switch (e.key) {
+        case ' ':
+          e.preventDefault();
+          if (video.paused) video.play().catch(() => {});
+          else video.pause();
+          break;
+        case 'm':
+        case 'M':
+          e.preventDefault();
+          video.muted = !video.muted;
+          break;
+        case 'f':
+        case 'F':
+          e.preventDefault();
+          if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+          else video.requestFullscreen?.() ?? video.parentElement?.requestFullscreen?.();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          video.currentTime = Math.max(0, video.currentTime - 10);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          video.currentTime = Math.min(video.duration || 0, video.currentTime + 10);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          video.volume = Math.min(1, video.volume + 0.1);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          video.volume = Math.max(0, video.volume - 0.1);
+          break;
+        default:
+          break;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Load video source — detect HLS vs MP4/WebM
   useEffect(() => {
@@ -218,7 +268,11 @@ export function VideoPlayer({ src, initialTime = 0, onTimeUpdate, onEnded }: Vid
         autoPlay
         playsInline
         preload="auto"
-      />
+      >
+        {trackUrl && (
+          <track kind="subtitles" src={trackUrl} srcLang="en" label="English" default />
+        )}
+      </video>
       {checkingUrl && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/60">
           <div className="text-center">

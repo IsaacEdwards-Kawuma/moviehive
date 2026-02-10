@@ -25,7 +25,7 @@ async function request<T>(
   options: RequestInit & { params?: Record<string, string | number | undefined> } = {},
   retryAfterRefresh = false
 ): Promise<T> {
-  const { params, ...init } = options;
+  const { params, retryOn5xx: _retryOn5xx, ...init } = options as RequestInit & { params?: Record<string, string | number | undefined>; retryOn5xx?: boolean };
   const pathWithParams = path.startsWith('http')
     ? path
     : `${getApiBase()}${path}`;
@@ -72,6 +72,13 @@ async function request<T>(
     } catch {
       /* ignore */
     }
+  }
+
+  // Retry once on 5xx for critical requests (e.g. stream URL)
+  const retryOn5xx = (options as RequestInit & { retryOn5xx?: boolean }).retryOn5xx;
+  if (!res.ok && retryOn5xx && res.status >= 500) {
+    await new Promise((r) => setTimeout(r, 800));
+    return request<T>(path, { ...options, retryOn5xx: false }, retryAfterRefresh);
   }
 
   if (!res.ok) {
@@ -140,11 +147,15 @@ export const api = {
     delete: (id: string) => request(`/profiles/${id}`, { method: 'DELETE' }),
   },
   content: {
-    list: (params?: { genre?: string; year?: number; type?: string; page?: number; limit?: number }) =>
-      request<{ data: Content[]; total: number; page: number; totalPages: number }>('/content', { params: params as Record<string, string | number | undefined> }),
+    list: (params?: { genre?: string; year?: number; type?: string; rating?: string; kidsOnly?: boolean; page?: number; limit?: number }) =>
+      request<{ data: Content[]; total: number; page: number; totalPages: number }>('/content', {
+        params: { ...params, kidsOnly: params?.kidsOnly ? 'true' : undefined } as Record<string, string | number | undefined>,
+      }),
     get: (id: string) => request<ContentDetail>(`/content/${id}`),
-    trending: () => request<Content[]>('/content/trending'),
-    newReleases: () => request<Content[]>('/content/new-releases'),
+    trending: (params?: { kidsOnly?: boolean }) =>
+      request<Content[]>(`/content/trending${params?.kidsOnly ? '?kidsOnly=true' : ''}`),
+    newReleases: (params?: { kidsOnly?: boolean }) =>
+      request<Content[]>(`/content/new-releases${params?.kidsOnly ? '?kidsOnly=true' : ''}`),
     featured: () => request<ContentDetail | null>('/content/featured'),
     episodes: (id: string) => request<Episode[]>(`/content/${id}/episodes`),
   },
@@ -184,7 +195,8 @@ export const api = {
   stream: {
     getUrl: (contentId: string, episodeId?: string) =>
       request<{ url: string; proxyUrl?: string; type: string }>(
-        `/stream/${contentId}/url${episodeId ? `?episodeId=${episodeId}` : ''}`
+        `/stream/${contentId}/url${episodeId ? `?episodeId=${episodeId}` : ''}`,
+        { retryOn5xx: true }
       ),
     getEpisodeUrl: (episodeId: string) =>
       request<{ url: string }>(`/stream/episode/${episodeId}/url`),
@@ -227,6 +239,8 @@ export const api = {
     createContent: (body: AdminContentCreate) => request<AdminContentDetail>('/admin/content', { method: 'POST', body: JSON.stringify(body) }),
     updateContent: (id: string, body: Partial<AdminContentCreate>) => request<AdminContentDetail>(`/admin/content/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
     deleteContent: (id: string) => request(`/admin/content/${id}`, { method: 'DELETE' }),
+    bulkDeleteContent: (ids: string[]) =>
+      request<{ deleted: number }>('/admin/content/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) }),
     addEpisode: (contentId: string, body: AdminEpisodeCreate) =>
       request<AdminEpisode>(`/admin/content/${contentId}/episodes`, { method: 'POST', body: JSON.stringify(body) }),
     updateEpisode: (id: string, body: Partial<AdminEpisodeCreate>) => request<AdminEpisode>(`/admin/episodes/${id}`, { method: 'PUT', body: JSON.stringify(body) }),

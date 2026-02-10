@@ -250,6 +250,25 @@ router.delete('/content/:id', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+const bulkDeleteSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(100),
+});
+
+router.post('/content/bulk-delete', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const parsed = bulkDeleteSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: 'Invalid input', details: parsed.error.flatten() });
+    }
+    const { ids } = parsed.data;
+    const result = await prisma.content.deleteMany({ where: { id: { in: ids } } });
+    res.json({ deleted: result.count });
+  } catch (error) {
+    console.error('Failed to bulk delete content:', error);
+    res.status(500).json({ message: 'Failed to bulk delete content' });
+  }
+});
+
 router.post('/content/:id/episodes', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { id: seriesId } = req.params;

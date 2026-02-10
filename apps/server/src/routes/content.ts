@@ -11,8 +11,10 @@ const contentInclude = {
   episodes: { orderBy: [...episodeOrderBy] },
 };
 
+const KIDS_SAFE_RATINGS = ['G', 'PG'];
+
 contentRouter.get('/', async (req, res) => {
-  const { genre, year, rating, type, featured, page = '1', limit = '20' } = req.query;
+  const { genre, year, rating, type, featured, kidsOnly, page = '1', limit = '20' } = req.query;
   const pageNum = Math.max(1, parseInt(String(page), 10));
   const limitNum = Math.min(50, Math.max(1, parseInt(String(limit), 10)));
   const skip = (pageNum - 1) * limitNum;
@@ -21,7 +23,8 @@ contentRouter.get('/', async (req, res) => {
   if (type) where.type = type;
   if (featured === 'true') where.featured = true;
   if (year) where.releaseYear = parseInt(String(year), 10);
-  if (rating) where.rating = rating;
+  if (kidsOnly === 'true') where.rating = { in: KIDS_SAFE_RATINGS };
+  else if (rating) where.rating = rating;
   if (genre) {
     where.contentGenres = {
       some: {
@@ -50,9 +53,12 @@ contentRouter.get('/', async (req, res) => {
   });
 });
 
-contentRouter.get('/trending', async (_req, res) => {
+contentRouter.get('/trending', async (req, res) => {
+  const kidsOnly = req.query.kidsOnly === 'true';
+  const where: Record<string, unknown> = { featured: true };
+  if (kidsOnly) where.rating = { in: KIDS_SAFE_RATINGS };
   const items = await prisma.content.findMany({
-    where: { featured: true },
+    where,
     include: contentInclude,
     take: 20,
     orderBy: { updatedAt: 'desc' },
@@ -60,8 +66,12 @@ contentRouter.get('/trending', async (_req, res) => {
   res.json(items);
 });
 
-contentRouter.get('/new-releases', async (_req, res) => {
+contentRouter.get('/new-releases', async (req, res) => {
+  const kidsOnly = req.query.kidsOnly === 'true';
+  const where: Record<string, unknown> = {};
+  if (kidsOnly) where.rating = { in: KIDS_SAFE_RATINGS };
   const items = await prisma.content.findMany({
+    where,
     include: contentInclude,
     orderBy: { createdAt: 'desc' },
     take: 20,

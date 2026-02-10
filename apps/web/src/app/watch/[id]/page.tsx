@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useRef, useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -25,6 +25,13 @@ export default function WatchPage() {
   const uiTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const [offlineUrl, setOfflineUrl] = useState<string | null>(null);
   const [offlineChecked, setOfflineChecked] = useState(false);
+  const [nextEpisodeOverlay, setNextEpisodeOverlay] = useState<{
+    id: string;
+    season: number;
+    episode: number;
+    title: string | null;
+  } | null>(null);
+  const router = useRouter();
 
   const { data: streamData, isLoading, isError: isStreamError, error: streamError } = useQuery({
     queryKey: ['stream', contentId, episodeId],
@@ -347,8 +354,62 @@ export default function WatchPage() {
           progressRef.current = Math.round(t);
           saveProgress(progressRef.current, false);
         }}
-        onEnded={() => saveProgress(progressRef.current, true)}
+        onEnded={() => {
+          saveProgress(progressRef.current, true);
+          if (contentDetail?.type === 'series' && episodeId && contentDetail.episodes?.length) {
+            const list = contentDetail.episodes as Array<{ id: string; season: number; episode: number; title?: string | null }>;
+            const idx = list.findIndex((ep) => ep.id === episodeId);
+            if (idx >= 0 && idx < list.length - 1) {
+              const next = list[idx + 1];
+              setNextEpisodeOverlay({
+                id: next.id,
+                season: next.season,
+                episode: next.episode,
+                title: next.title ?? null,
+              });
+            }
+          }
+        }}
       />
+
+      <AnimatePresence>
+        {nextEpisodeOverlay && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-30 flex items-center justify-center bg-black/80"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-stream-dark-gray rounded-xl p-6 sm:p-8 max-w-sm w-full mx-4 text-center"
+            >
+              <p className="text-stream-text-secondary text-sm mb-1">Next episode</p>
+              <p className="text-lg font-bold mb-4">
+                S{nextEpisodeOverlay.season} E{nextEpisodeOverlay.episode}
+                {nextEpisodeOverlay.title ? ` · ${nextEpisodeOverlay.title}` : ''}
+              </p>
+              <div className="flex gap-3 justify-center flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setNextEpisodeOverlay(null)}
+                  className="px-4 py-2 rounded-lg glass hover:bg-white/10"
+                >
+                  Cancel
+                </button>
+                <Link
+                  href={`/watch/${contentId}?episode=${nextEpisodeOverlay.id}`}
+                  className="px-5 py-2 rounded-lg bg-stream-accent text-white font-semibold hover:bg-red-600"
+                >
+                  Play now
+                </Link>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

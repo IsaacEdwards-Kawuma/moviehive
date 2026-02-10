@@ -120,14 +120,41 @@ All authenticated routes expect `Authorization: Bearer <accessToken>` or cookie 
   - Set `CDN_URL` in the server env; stream routes will prefix URLs with it.
 - For full HLS support in all browsers, consider adding **hls.js** or **Video.js** in the frontend (e.g. in `VideoPlayer`).
 
+## Environment variables
+
+### Server (`apps/server/.env`)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `JWT_SECRET` | Yes | Min 32 chars; used for access tokens and stream proxy |
+| `JWT_REFRESH_SECRET` | Yes | Min 32 chars; used for refresh tokens |
+| `CORS_ORIGIN` | Yes (prod) | Comma-separated frontend origins (e.g. `https://moviehive.vercel.app`) |
+| `PORT` | No | Default `4000` |
+| `UPLOAD_DIR` | No | Path for uploaded files; default `uploads` |
+| `CDN_URL` | No | Base URL for CDN (e.g. Bunny Pull Zone) |
+| `RATE_LIMIT_MAX` | No | Max requests per IP per 15 min; default `500` |
+| Google OAuth | No | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` (see DEPLOYMENT.md) |
+
+### Frontend (Vercel / `.env.local`)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_API_URL` | No | API base URL; when on `*.vercel.app` defaults to Render API URL |
+
+### Health check
+
+- **GET** `/api/health` — returns `{ status: 'ok', timestamp }`. Use this for uptime checks or load balancers.
+
 ## Deployment Checklist
 
-- [ ] Set `DATABASE_URL` (e.g. managed PostgreSQL)
+- [ ] Set `DATABASE_URL` (e.g. Neon, Render PostgreSQL)
 - [ ] Set `JWT_SECRET` and `JWT_REFRESH_SECRET` (strong, random)
-- [ ] Set `CORS_ORIGIN` to your frontend URL
-- [ ] Run `prisma migrate deploy` (or `db push` for prototyping)
-- [ ] Frontend: set `NEXT_PUBLIC_API_URL` to your API URL if not using same-origin proxy
-- [ ] Optional: Stripe webhook, CDN, Redis, rate limiting tuning
+- [ ] Set `CORS_ORIGIN` to your frontend URL(s)
+- [ ] Run `prisma migrate deploy` or `db push` (in `apps/server`)
+- [ ] Frontend: set `NEXT_PUBLIC_API_URL` if frontend and API are on different domains
+- [ ] Video hosting: see **docs/BUNNY_SETUP.md** for Bunny CDN; set `CDN_URL` if using a CDN base URL
+- [ ] Full deployment steps: see **DEPLOYMENT.md**
 
 ## Scripts
 

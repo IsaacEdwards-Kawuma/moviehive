@@ -20,13 +20,13 @@ export function AdminMonitoring({
   const { overview, contentByType, recentContent, recentWatchActivity, topContentByWatches, recentSearches } = analytics;
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Monitoring &amp; analytics</h1>
+    <div className="space-y-6 sm:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold">Monitoring &amp; analytics</h1>
         <button
           type="button"
           onClick={onRefresh}
-          className="text-stream-accent hover:underline text-sm"
+          className="text-stream-accent hover:underline text-sm self-start sm:self-auto"
         >
           Refresh
         </button>
@@ -34,7 +34,7 @@ export function AdminMonitoring({
 
       <div>
         <h2 className="text-lg font-semibold mb-4">Overview</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-stream-dark-gray p-4 rounded">
             <div className="text-2xl font-bold">{overview.totalUsers}</div>
             <div className="text-stream-text-secondary text-sm">Users</div>
@@ -56,7 +56,7 @@ export function AdminMonitoring({
 
       <div>
         <h2 className="text-lg font-semibold mb-4">Content by type</h2>
-        <div className="bg-stream-dark-gray rounded p-4 flex gap-6">
+        <div className="bg-stream-dark-gray rounded p-4 flex flex-wrap gap-4 sm:gap-6">
           <div>
             <span className="text-stream-text-secondary">Movies:</span>{' '}
             <span className="font-bold">{contentByType.movie ?? 0}</span>
@@ -71,7 +71,8 @@ export function AdminMonitoring({
       <div>
         <h2 className="text-lg font-semibold mb-4">Top content by watches</h2>
         <div className="bg-stream-dark-gray rounded overflow-hidden">
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[280px]">
             <thead className="bg-stream-black">
               <tr>
                 <th className="p-3 text-left text-sm font-medium">Title</th>
@@ -97,10 +98,11 @@ export function AdminMonitoring({
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
         <div>
           <h2 className="text-lg font-semibold mb-4">Recent content added</h2>
           <ul className="bg-stream-dark-gray rounded divide-y divide-stream-gray">

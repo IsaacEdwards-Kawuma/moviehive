@@ -11,6 +11,7 @@ import { ContentRow } from '@/components/home/ContentRow';
 export function HomePage() {
   const { currentProfile } = useProfileStore();
   const profileId = currentProfile?.id ?? '';
+  const kidsOnly = currentProfile?.isKids ?? false;
 
   const { data: featured } = useQuery({
     queryKey: ['content', 'featured'],
@@ -24,8 +25,8 @@ export function HomePage() {
   });
 
   const { data: trending = [] } = useQuery({
-    queryKey: ['content', 'trending'],
-    queryFn: () => api.content.trending(),
+    queryKey: ['content', 'trending', kidsOnly],
+    queryFn: () => api.content.trending({ kidsOnly }),
   });
 
   const { data: forYou = [] } = useQuery({
@@ -35,8 +36,8 @@ export function HomePage() {
   });
 
   const { data: newReleases = [] } = useQuery({
-    queryKey: ['content', 'new-releases'],
-    queryFn: () => api.content.newReleases(),
+    queryKey: ['content', 'new-releases', kidsOnly],
+    queryFn: () => api.content.newReleases({ kidsOnly }),
   });
 
   return (

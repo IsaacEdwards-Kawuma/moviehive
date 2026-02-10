@@ -8,12 +8,14 @@ import api, { type ContentDetail } from '@/lib/api';
 import { useProfileStore } from '@/store/useProfileStore';
 import { Header } from '@/components/layout/Header';
 import { DownloadButton } from '@/components/player/DownloadButton';
+import { useToast } from '@/context/ToastContext';
 
 export default function TitlePage() {
   const params = useParams();
   const id = params?.id as string;
   const { currentProfile } = useProfileStore();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: content, isLoading } = useQuery({
     queryKey: ['content', id],
@@ -39,6 +41,7 @@ export default function TitlePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-list', currentProfile?.id] });
+      showToast(inList ? 'Removed from My List' : 'Added to My List');
     },
   });
 
@@ -189,6 +192,37 @@ export default function TitlePage() {
                 episodeTitle={isSeries ? episodes[0]?.title : undefined}
                 className="flex-shrink-0"
               />
+              <motion.button
+                type="button"
+                onClick={async () => {
+                  const url = typeof window !== 'undefined' ? window.location.href : '';
+                  try {
+                    if (typeof navigator !== 'undefined' && navigator.share) {
+                      await navigator.share({
+                        title: detail.title,
+                        url,
+                        text: `Watch ${detail.title} on MOVI HIVE`,
+                      });
+                      showToast('Shared');
+                    } else {
+                      await navigator.clipboard?.writeText(url);
+                      showToast('Link copied to clipboard');
+                    }
+                  } catch {
+                    if (navigator.clipboard) {
+                      await navigator.clipboard.writeText(url).then(() => showToast('Link copied to clipboard')).catch(() => {});
+                    }
+                  }
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center justify-center gap-2 glass px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold transition-colors hover:bg-white/10"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                Share
+              </motion.button>
             </div>
           </motion.div>
 

@@ -35,7 +35,28 @@ export function ContentRow({
     setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10);
   };
 
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return (
+      <section ref={sectionRef} className="py-4 sm:py-6 pl-4 sm:pl-6 md:pl-12 pr-4 overflow-hidden">
+        <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 flex items-center gap-2">
+          <span className="w-1 h-5 bg-stream-accent rounded-full flex-shrink-0" />
+          {title}
+        </h2>
+        <div className="rounded-xl glass p-6 text-center">
+          <p className="text-stream-text-secondary mb-3">No titles here yet.</p>
+          <Link
+            href="/browse"
+            className="inline-flex items-center gap-2 text-stream-accent hover:underline font-medium"
+          >
+            Browse all
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </Link>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section ref={sectionRef} className="py-4 sm:py-6 pl-4 sm:pl-6 md:pl-12 pr-4 sm:pr-0 overflow-hidden">
