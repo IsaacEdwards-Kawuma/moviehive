@@ -283,6 +283,9 @@ When you use an **external** video URL (Bunny, ImageKit, Cloudinary), the app st
 
 ## Troubleshooting
 
+- **Render "Bad Gateway" / "This service is currently unavailable"**  
+  The API is not running. In Render → your API service → **Settings** → **Start Command**, set it to: `cd apps/server && npm run start`, then save and redeploy. See **[docs/RENDER_BAD_GATEWAY.md](docs/RENDER_BAD_GATEWAY.md)** for the full checklist.
+
 - **"Too many requests" when logging in**  
   The API rate-limits requests per IP (default 500 per 15 minutes). For many users, set a higher limit on Render: **Environment** → add `RATE_LIMIT_MAX` = `2000` or `3000`. Redeploy after changing. Trade-off: higher values give more headroom for real traffic but less protection against a single abusive IP; 2000–3000 is usually fine for a growing app.
 
