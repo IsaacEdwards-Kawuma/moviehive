@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { optionalAuth } from '../middleware/auth.js';
+import { optionalAuth, requireAuth } from '../middleware/auth.js';
 
 export const searchRouter = Router();
 
@@ -10,7 +10,7 @@ const contentInclude = {
 };
 
 searchRouter.get('/', optionalAuth, async (req, res) => {
-  const { q, genre, year, rating, type, page = '1', limit = '20' } = req.query;
+  const { q, genre, year, rating, type, page = '1', limit = '20', profileId: profileIdQuery } = req.query;
   const query = typeof q === 'string' ? q.trim() : '';
   const pageNum = Math.max(1, parseInt(String(page), 10));
   const limitNum = Math.min(50, Math.max(1, parseInt(String(limit), 10)));
@@ -45,10 +45,16 @@ searchRouter.get('/', optionalAuth, async (req, res) => {
   ]);
 
   const userId = (req as unknown as { userId?: string }).userId;
-  if (userId && query.length >= 2) {
-    await prisma.searchHistory.create({
-      data: { query, profileId: undefined },
-    }).catch(() => {});
+  const profileId = typeof profileIdQuery === 'string' ? profileIdQuery : undefined;
+  if (userId && profileId && query.length >= 2) {
+    const profile = await prisma.profile.findFirst({
+      where: { id: profileId, userId },
+    });
+    if (profile) {
+      await prisma.searchHistory.create({
+        data: { query, profileId },
+      }).catch(() => {});
+    }
   }
 
   res.json({
@@ -77,13 +83,32 @@ searchRouter.get('/suggest', async (req, res) => {
   res.json(results);
 });
 
-searchRouter.get('/recent', async (req, res) => {
-  const recent = await prisma.searchHistory.findMany({
-    orderBy: { createdAt: 'desc' },
-    distinct: ['query'],
-    take: 10,
+searchRouter.get('/recent', requireAuth, async (req, res) => {
+  const userId = (req as unknown as { userId: string }).userId;
+  const { profileId } = req.query;
+  if (!profileId || typeof profileId !== 'string') {
+    res.status(400).json({ error: 'profileId required' });
+    return;
+  }
+  const profile = await prisma.profile.findFirst({
+    where: { id: profileId, userId },
   });
-  res.json(recent.map((r) => r.query));
+  if (!profile) {
+    res.status(404).json({ error: 'Profile not found' });
+    return;
+  }
+  const rows = await prisma.searchHistory.findMany({
+    where: { profileId },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  });
+  const seen = new Set<string>();
+  const recent = rows.filter((r) => {
+    if (seen.has(r.query)) return false;
+    seen.add(r.query);
+    return true;
+  }).slice(0, 10).map((r) => r.query);
+  res.json(recent);
 });
 
 searchRouter.get('/genres', async (_req, res) => {

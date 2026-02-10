@@ -185,9 +185,10 @@ export default function AdminDashboard() {
 
         {tab === 'users' && (
           <>
-            <h1 className="text-2xl font-bold mb-6">Users</h1>
+            <h1 className="text-2xl font-bold mb-4 sm:mb-6">Users</h1>
             <div className="bg-stream-dark-gray rounded overflow-hidden">
-              <table className="w-full">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px]">
                 <thead className="bg-stream-black">
                   <tr>
                     <th className="p-4 text-left text-sm font-medium">Email</th>
@@ -225,13 +226,14 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </>
         )}
 
         {tab === 'content' && (
           <>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
               <h1 className="text-2xl font-bold">Content</h1>
               <button
                 type="button"
@@ -242,7 +244,8 @@ export default function AdminDashboard() {
               </button>
             </div>
             <div className="bg-stream-dark-gray rounded overflow-hidden">
-              <table className="w-full">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[700px]">
                 <thead className="bg-stream-black">
                   <tr>
                     <th className="p-4 text-left text-sm font-medium">Title</th>
@@ -284,9 +287,10 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
             {contentTotal > 15 && (
-              <div className="mt-4 flex justify-center gap-2">
+              <div className="mt-4 flex justify-center gap-2 text-sm">
                 <button
                   type="button"
                   disabled={contentPage <= 1}

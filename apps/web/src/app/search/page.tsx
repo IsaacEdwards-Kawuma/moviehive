@@ -7,14 +7,17 @@ import { useQuery } from '@tanstack/react-query';
 import api, { type Content } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useProfileStore } from '@/store/useProfileStore';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounce(query, 300);
+  const { currentProfile } = useProfileStore();
+  const profileId = currentProfile?.id ?? '';
 
   const { data: results, isLoading } = useQuery({
-    queryKey: ['search', debouncedQuery],
-    queryFn: () => api.search.query(debouncedQuery, { limit: 30 }),
+    queryKey: ['search', debouncedQuery, profileId],
+    queryFn: () => api.search.query(debouncedQuery, { limit: 30, profileId: profileId || undefined }),
     enabled: debouncedQuery.length >= 2,
   });
 
@@ -25,8 +28,9 @@ export default function SearchPage() {
   });
 
   const { data: recent = [] } = useQuery({
-    queryKey: ['search', 'recent'],
-    queryFn: () => api.search.recent(),
+    queryKey: ['search', 'recent', profileId],
+    queryFn: () => api.search.recent(profileId),
+    enabled: !!profileId,
   });
 
   const items = results?.data ?? [];

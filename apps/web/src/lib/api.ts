@@ -164,12 +164,13 @@ export const api = {
       request(`/my-list/${contentId}?profileId=${profileId}`, { method: 'DELETE' }),
   },
   search: {
-    query: (q: string, params?: { genre?: string; year?: number; type?: string; page?: number; limit?: number }) =>
+    query: (q: string, params?: { genre?: string; year?: number; type?: string; page?: number; limit?: number; profileId?: string }) =>
       request<{ data: Content[]; total: number; page: number; totalPages: number }>('/search', {
         params: { q, ...params } as Record<string, string | number | undefined>,
       }),
     suggest: (q: string) => request<Array<{ id: string; title: string; type: string; thumbnailUrl: string | null }>>(`/search/suggest?q=${encodeURIComponent(q)}`),
-    recent: () => request<string[]>('/search/recent'),
+    recent: (profileId: string) =>
+      request<string[]>(`/search/recent?profileId=${encodeURIComponent(profileId)}`),
     genres: () => request<Array<{ id: string; name: string; slug: string }>>('/search/genres'),
   },
   recommendations: {
