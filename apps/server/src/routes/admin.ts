@@ -26,6 +26,30 @@ async function notifyAllUsers(notification: {
   });
 }
 
+/** Notify only users who have the given content (e.g. series) in their My List. */
+async function notifyMyListUsers(contentId: string, notification: {
+  type: string;
+  title: string;
+  body: string;
+  link?: string;
+}) {
+  const listItems = await prisma.myListItem.findMany({
+    where: { contentId },
+    include: { profile: { select: { userId: true } } },
+  });
+  const userIds = [...new Set(listItems.map((i) => i.profile.userId))];
+  if (userIds.length === 0) return;
+  await prisma.notification.createMany({
+    data: userIds.map((userId) => ({
+      userId,
+      type: notification.type,
+      title: notification.title,
+      body: notification.body,
+      link: notification.link ?? null,
+    })),
+  });
+}
+
 function slugFromTitle(title: string): string {
   return title
     .toLowerCase()
@@ -324,15 +348,18 @@ router.post('/content/:id/episodes', requireAuth, requireAdmin, async (req, res)
       data: { seriesId, ...parsed.data },
     });
 
-    // Notify all users about the new episode
-    notifyAllUsers({
-      type: 'new_episode',
-      title: `New episode: ${series.title} S${parsed.data.season} E${parsed.data.episode}`,
-      body: parsed.data.title
-        ? `"${parsed.data.title}" is now available.`
-        : `Season ${parsed.data.season}, Episode ${parsed.data.episode} is now available.`,
-      link: `/watch/${seriesId}?episode=${episode.id}`,
-    }).catch((err) => console.error('Failed to send episode notifications:', err));
+    const episodeTitle = parsed.data.title
+      ? `"${parsed.data.title}"`
+      : `S${parsed.data.season} E${parsed.data.episode}`;
+    const watchLink = `/watch/${seriesId}?episode=${episode.id}`;
+
+    // Notify users who have this series in My List ("New in your list")
+    notifyMyListUsers(seriesId, {
+      type: 'my_list',
+      title: `New in your list: ${series.title} · ${episodeTitle}`,
+      body: `A new episode is available.`,
+      link: watchLink,
+    }).catch((err) => console.error('Failed to send my-list notifications:', err));
 
     res.status(201).json(episode);
   } catch (error) {

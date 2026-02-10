@@ -31,6 +31,7 @@ export default function WatchPage() {
     episode: number;
     title: string | null;
   } | null>(null);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const router = useRouter();
   const videoPlayerRef = useRef<VideoPlayerHandle>(null);
   const lastTapRef = useRef<{ time: number; x: number }>({ time: 0, x: 0 });
@@ -132,6 +133,18 @@ export default function WatchPage() {
   useEffect(() => {
     resetUITimeout();
     return () => clearTimeout(uiTimeoutRef.current);
+  }, [resetUITimeout]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '?' || e.key === '/') {
+        e.preventDefault();
+        setShowShortcutsHelp((v) => !v);
+        resetUITimeout();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [resetUITimeout]);
 
   const handleStartOver = useCallback(() => {
@@ -380,7 +393,15 @@ export default function WatchPage() {
               </svg>
               Back
             </Link>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowShortcutsHelp((v) => !v); }}
+                className="glass px-3 py-2 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                title="Keyboard shortcuts"
+              >
+                ?
+              </button>
               {initialTime > 0 && (
                 <button
                   type="button"
@@ -436,6 +457,39 @@ export default function WatchPage() {
           }
         }}
       />
+
+      <AnimatePresence>
+        {showShortcutsHelp && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-25 flex items-center justify-center bg-black/80 p-4"
+            onClick={() => setShowShortcutsHelp(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-stream-dark-gray rounded-xl p-6 max-w-sm w-full shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <span className="w-1 h-5 bg-stream-accent rounded-full" />
+                Keyboard shortcuts
+              </h3>
+              <ul className="space-y-2 text-sm text-stream-text-secondary">
+                <li className="flex justify-between gap-4"><span>Play / Pause</span><kbd className="px-2 py-0.5 rounded bg-white/10 font-mono">Space</kbd></li>
+                <li className="flex justify-between gap-4"><span>Fullscreen</span><kbd className="px-2 py-0.5 rounded bg-white/10 font-mono">F</kbd></li>
+                <li className="flex justify-between gap-4"><span>Mute</span><kbd className="px-2 py-0.5 rounded bg-white/10 font-mono">M</kbd></li>
+                <li className="flex justify-between gap-4"><span>Seek ±10s</span><kbd className="px-2 py-0.5 rounded bg-white/10 font-mono">← →</kbd></li>
+                <li className="flex justify-between gap-4"><span>Volume</span><kbd className="px-2 py-0.5 rounded bg-white/10 font-mono">↑ ↓</kbd></li>
+              </ul>
+              <p className="text-stream-text-secondary/70 text-xs mt-4">Press ? again to close</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {nextEpisodeOverlay && (

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Header } from '@/components/layout/Header';
@@ -37,8 +37,9 @@ function DeleteAccountButton({
 }
 
 export default function AccountPage() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, setAuth } = useAuthStore();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [showDeleteForm, setShowDeleteForm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const { data: subscription } = useQuery({
@@ -46,6 +47,22 @@ export default function AccountPage() {
     queryFn: () => api.payments.subscriptionStatus(),
     enabled: !!user?.id,
   });
+
+  const { data: me } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: () => api.auth.me(),
+    enabled: !!user?.id,
+  });
+
+  const sendVerificationMu = useMutation({
+    mutationFn: () => api.auth.sendVerification(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      api.auth.me().then((u) => setAuth(u, useAuthStore.getState().accessToken));
+    },
+  });
+
+  const emailVerified = me?.emailVerified ?? user?.emailVerified ?? false;
 
   return (
     <div className="min-h-screen bg-stream-bg">
@@ -63,6 +80,29 @@ export default function AccountPage() {
           <span className="w-1.5 h-8 bg-stream-accent rounded-full" />
           <h1 className="text-3xl font-bold">Account</h1>
         </motion.div>
+
+        {!emailVerified && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+          >
+            <div>
+              <p className="font-medium text-amber-200">Verify your email</p>
+              <p className="text-sm text-stream-text-secondary mt-0.5">
+                We sent a verification link to your email. Click it to verify, or resend below.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => sendVerificationMu.mutate()}
+              disabled={sendVerificationMu.isPending}
+              className="px-4 py-2 rounded-lg bg-amber-500/20 text-amber-200 font-medium hover:bg-amber-500/30 transition-colors disabled:opacity-50 shrink-0"
+            >
+              {sendVerificationMu.isPending ? 'Sending…' : 'Resend verification email'}
+            </button>
+          </motion.div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -100,6 +140,11 @@ export default function AccountPage() {
 
         <div className="border-t border-white/10 pt-6 mt-6">
           <p className="text-stream-text-secondary text-sm mb-2">Delete account</p>
+          {!emailVerified && (
+            <p className="text-amber-200/90 text-sm mb-2">
+              We recommend verifying your email first for account security. You can still delete below.
+            </p>
+          )}
           <p className="text-stream-text-secondary/80 text-sm mb-3">
             Permanently delete your account and all profiles, watch history, and data. This cannot be undone.
           </p>

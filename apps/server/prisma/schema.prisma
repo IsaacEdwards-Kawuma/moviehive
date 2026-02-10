@@ -16,6 +16,8 @@ model User {
   role              String   @default("USER") 
   subscriptionTier  String    @default("free") @map("subscription_tier")
   emailVerified     Boolean   @default(false) @map("email_verified")
+  emailVerificationToken   String?   @map("email_verification_token")
+  emailVerificationExpires DateTime? @map("email_verification_expires")
   twoFactorEnabled  Boolean   @default(false) @map("two_factor_enabled")
   twoFactorSecret   String?   @map("two_factor_secret")
   passwordResetToken   String?   @map("password_reset_token")

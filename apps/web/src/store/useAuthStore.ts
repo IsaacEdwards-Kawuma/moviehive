@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-type User = { id: string; email: string; subscriptionTier: string; role?: string } | null;
+type User = { id: string; email: string; subscriptionTier: string; role?: string; emailVerified?: boolean } | null;
 
 interface AuthState {
   user: User;

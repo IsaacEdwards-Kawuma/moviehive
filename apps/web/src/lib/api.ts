@@ -139,7 +139,7 @@ export const api = {
         body: JSON.stringify({ email, password }),
       }),
     logout: () => request('/auth/logout', { method: 'POST' }),
-    me: () => request<{ id: string; email: string; subscriptionTier: string; role?: string }>('/auth/me'),
+    me: () => request<{ id: string; email: string; subscriptionTier: string; role?: string; emailVerified?: boolean }>('/auth/me'),
     refresh: () => request<{ accessToken: string }>('/auth/refresh-token', { method: 'POST' }),
     deleteAccount: () => request<void>('/auth/me', { method: 'DELETE' }),
     forgotPassword: (email: string) =>
@@ -152,6 +152,10 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ token, newPassword }),
       }),
+    verifyEmail: (token: string) =>
+      request<{ message: string }>(`/auth/verify-email?token=${encodeURIComponent(token)}`),
+    sendVerification: () =>
+      request<{ message: string }>('/auth/send-verification', { method: 'POST' }),
   },
   profiles: {
     list: () => request<Array<{ id: string; name: string; avatar: string | null; isKids: boolean }>>('/profiles'),
@@ -172,6 +176,10 @@ export const api = {
     newReleases: (params?: { kidsOnly?: boolean }) =>
       request<Content[]>(`/content/new-releases${params?.kidsOnly ? '?kidsOnly=true' : ''}`),
     featured: () => request<ContentDetail | null>('/content/featured'),
+    homeGenres: (params?: { kidsOnly?: boolean }) =>
+      request<Array<{ slug: string; name: string; items: Content[] }>>(
+        `/content/home-genres${params?.kidsOnly ? '?kidsOnly=true' : ''}`
+      ),
     episodes: (id: string) => request<Episode[]>(`/content/${id}/episodes`),
   },
   watchHistory: {
@@ -194,7 +202,7 @@ export const api = {
       request<{ data: Content[]; total: number; page: number; totalPages: number }>('/search', {
         params: { q, ...params } as Record<string, string | number | undefined>,
       }),
-    suggest: (q: string) => request<Array<{ id: string; title: string; type: string; thumbnailUrl: string | null }>>(`/search/suggest?q=${encodeURIComponent(q)}`),
+    suggest: (q: string) => request<Array<{ id: string; slug: string | null; title: string; type: string; thumbnailUrl: string | null }>>(`/search/suggest?q=${encodeURIComponent(q)}`),
     recent: (profileId: string) =>
       request<string[]>(`/search/recent?profileId=${encodeURIComponent(profileId)}`),
     genres: () => request<Array<{ id: string; name: string; slug: string }>>('/search/genres'),

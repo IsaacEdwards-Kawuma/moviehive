@@ -14,6 +14,7 @@ import {
 import { requireAuth } from '../middleware/auth.js';
 
 const RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
+const EMAIL_VERIFY_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export const authRouter = Router();
 
@@ -40,10 +41,23 @@ authRouter.post('/register', async (req, res) => {
     return;
   }
   const passwordHash = await hashPassword(password);
+  const verifyToken = crypto.randomBytes(32).toString('hex');
+  const verifyExpires = new Date(Date.now() + EMAIL_VERIFY_EXPIRY_MS);
   const user = await prisma.user.create({
-    data: { email, passwordHash },
+    data: {
+      email,
+      passwordHash,
+      emailVerificationToken: verifyToken,
+      emailVerificationExpires: verifyExpires,
+    },
     select: { id: true, email: true, subscriptionTier: true, role: true, createdAt: true },
   });
+  const baseUrl = process.env.APP_BASE_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
+  const verifyLink = `${baseUrl}/verify-email?token=${encodeURIComponent(verifyToken)}`;
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[register] Verification link (dev):', verifyLink);
+  }
+  // TODO: send verification email via Resend/SendGrid
   const accessToken = signAccessToken({ userId: user.id, email: user.email });
   const refreshToken = signRefreshToken({ userId: user.id, email: user.email });
   const cookieOpts = process.env.NODE_ENV === 'production'
@@ -129,7 +143,7 @@ authRouter.get('/me', requireAuth, async (req, res) => {
   const userId = (req as unknown as { userId: string }).userId;
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, subscriptionTier: true, role: true, createdAt: true },
+    select: { id: true, email: true, subscriptionTier: true, role: true, createdAt: true, emailVerified: true },
   });
   if (!user) {
     res.status(404).json({ error: 'User not found' });
@@ -201,4 +215,56 @@ authRouter.post('/reset-password', async (req, res) => {
     data: { passwordHash, passwordResetToken: null, passwordResetExpires: null },
   });
   res.json({ message: 'Password reset. You can sign in with your new password.' });
+});
+
+authRouter.get('/verify-email', async (req, res) => {
+  const token = typeof req.query.token === 'string' ? req.query.token.trim() : '';
+  if (!token) {
+    res.status(400).json({ error: 'Verification token required.' });
+    return;
+  }
+  const user = await prisma.user.findFirst({
+    where: {
+      emailVerificationToken: token,
+      emailVerificationExpires: { gt: new Date() },
+    },
+  });
+  if (!user) {
+    res.status(400).json({ error: 'Invalid or expired verification link. Request a new one from Account.' });
+    return;
+  }
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { emailVerified: true, emailVerificationToken: null, emailVerificationExpires: null },
+  });
+  res.json({ message: 'Email verified. You can close this page.' });
+});
+
+authRouter.post('/send-verification', requireAuth, async (req, res) => {
+  const userId = (req as unknown as { userId: string }).userId;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, emailVerified: true },
+  });
+  if (!user) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+  if (user.emailVerified) {
+    res.json({ message: 'Email already verified.' });
+    return;
+  }
+  const verifyToken = crypto.randomBytes(32).toString('hex');
+  const verifyExpires = new Date(Date.now() + EMAIL_VERIFY_EXPIRY_MS);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { emailVerificationToken: verifyToken, emailVerificationExpires: verifyExpires },
+  });
+  const baseUrl = process.env.APP_BASE_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
+  const verifyLink = `${baseUrl}/verify-email?token=${encodeURIComponent(verifyToken)}`;
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[send-verification] Link (dev):', verifyLink);
+  }
+  // TODO: send verification email
+  res.json({ message: 'If your email is correct, you will receive a verification link.' });
 });

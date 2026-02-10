@@ -77,7 +77,7 @@ searchRouter.get('/suggest', async (req, res) => {
     where: {
       title: { contains: query, mode: 'insensitive' },
     },
-    select: { id: true, title: true, type: true, thumbnailUrl: true, releaseYear: true },
+    select: { id: true, slug: true, title: true, type: true, thumbnailUrl: true, releaseYear: true },
     take: 10,
   });
   res.json(results);

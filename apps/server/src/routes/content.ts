@@ -88,6 +88,29 @@ contentRouter.get('/featured', async (_req, res) => {
   res.json(item ?? null);
 });
 
+/** Home page: genres with top content per genre (for genre rows). */
+contentRouter.get('/home-genres', async (req, res) => {
+  const kidsOnly = req.query.kidsOnly === 'true';
+  const limitPerGenre = Math.min(20, Math.max(6, parseInt(String(req.query.limitPerGenre ?? 12), 10)));
+  const genreWhere = kidsOnly ? { rating: { in: KIDS_SAFE_RATINGS } } : {};
+  const genres = await prisma.genre.findMany({ orderBy: { name: 'asc' } });
+  const result = await Promise.all(
+    genres.map(async (g) => {
+      const items = await prisma.content.findMany({
+        where: {
+          ...genreWhere,
+          contentGenres: { some: { genreId: g.id } },
+        },
+        include: contentInclude,
+        orderBy: [{ featured: 'desc' }, { releaseYear: 'desc' }],
+        take: limitPerGenre,
+      });
+      return { slug: g.slug, name: g.name, items };
+    })
+  );
+  res.json(result.filter((r) => r.items.length > 0));
+});
+
 function isUuid(s: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
 }

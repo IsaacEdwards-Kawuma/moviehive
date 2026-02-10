@@ -40,6 +40,11 @@ export function HomePage() {
     queryFn: () => api.content.newReleases({ kidsOnly }),
   });
 
+  const { data: homeGenres = [] } = useQuery({
+    queryKey: ['content', 'home-genres', kidsOnly],
+    queryFn: () => api.content.homeGenres({ kidsOnly }),
+  });
+
   return (
     <div className="min-h-screen bg-stream-bg">
       <Header />
@@ -62,6 +67,9 @@ export function HomePage() {
             <ContentRow title="Because you watched" items={forYou as Content[]} />
           )}
           <ContentRow title="New Releases" items={newReleases as Content[]} />
+          {homeGenres.map((row) => (
+            <ContentRow key={row.slug} title={row.name} items={row.items as Content[]} />
+          ))}
         </div>
       </motion.main>
     </div>

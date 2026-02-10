@@ -22,9 +22,9 @@ export default function SearchPage() {
   });
 
   const { data: suggestions = [] } = useQuery({
-    queryKey: ['search', 'suggest', query],
-    queryFn: () => api.search.suggest(query),
-    enabled: query.length >= 2,
+    queryKey: ['search', 'suggest', debouncedQuery],
+    queryFn: () => api.search.suggest(debouncedQuery),
+    enabled: debouncedQuery.length >= 2,
   });
 
   const { data: recent = [] } = useQuery({
@@ -34,7 +34,7 @@ export default function SearchPage() {
   });
 
   const items = results?.data ?? [];
-  const showSuggestions = query.length >= 2 && suggestions.length > 0 && items.length === 0 && !isLoading;
+  const showSuggestions = debouncedQuery.length >= 2 && suggestions.length > 0 && !isLoading;
 
   return (
     <div className="min-h-screen bg-stream-bg">
@@ -99,7 +99,7 @@ export default function SearchPage() {
                     transition={{ delay: i * 0.05 }}
                   >
                     <Link
-                      href={`/title/${s.id}`}
+                      href={`/title/${s.slug ?? s.id}`}
                       className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors"
                     >
                       {s.thumbnailUrl && (
