@@ -31,6 +31,9 @@ export default function AdminDashboard() {
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState<'ALL' | 'USER' | 'ADMIN'>('ALL');
   const [userPlanFilter, setUserPlanFilter] = useState<'ALL' | 'free' | 'basic' | 'standard' | 'premium' | 'avod'>('ALL');
+  const [contentSearch, setContentSearch] = useState('');
+  const [contentTypeFilter, setContentTypeFilter] = useState<'ALL' | 'movie' | 'series'>('ALL');
+  const [contentMissingVideoOnly, setContentMissingVideoOnly] = useState(false);
 
   const loadOverview = async () => {
     const [statsRes, usersRes] = await Promise.all([api.admin.getStats(), api.admin.getUsers()]);
@@ -156,6 +159,19 @@ export default function AdminDashboard() {
     if (q && !u.email.toLowerCase().includes(q)) return false;
     if (userRoleFilter !== 'ALL' && u.role !== userRoleFilter) return false;
     if (userPlanFilter !== 'ALL' && u.subscriptionTier !== userPlanFilter) return false;
+    return true;
+  });
+
+  const filteredContent = contentList.filter((c) => {
+    const q = contentSearch.trim().toLowerCase();
+    if (q && !c.title.toLowerCase().includes(q)) return false;
+    if (contentTypeFilter !== 'ALL' && c.type !== contentTypeFilter) return false;
+    if (contentMissingVideoOnly) {
+      // AdminContent includes videoUrl via AdminContentDetail type; treat missing/empty as \"missing\"
+      // @ts-expect-error videoUrl is present on AdminContentDetail
+      const v = c.videoUrl as string | null | undefined;
+      if (v && v.trim().length > 0) return false;
+    }
     return true;
   });
 
@@ -334,6 +350,31 @@ export default function AdminDashboard() {
                     {bulkDeleting ? 'Deleting…' : `Delete selected (${selectedContentIds.size})`}
                   </button>
                 )}
+                <input
+                  type="search"
+                  placeholder="Search title…"
+                  value={contentSearch}
+                  onChange={(e) => setContentSearch(e.target.value)}
+                  className="bg-stream-black border border-stream-gray rounded px-3 py-1.5 text-sm"
+                />
+                <select
+                  value={contentTypeFilter}
+                  onChange={(e) => setContentTypeFilter(e.target.value as typeof contentTypeFilter)}
+                  className="bg-stream-black border border-stream-gray rounded px-2 py-1 text-sm"
+                >
+                  <option value="ALL">All types</option>
+                  <option value="movie">Movies</option>
+                  <option value="series">Series</option>
+                </select>
+                <label className="flex items-center gap-1 text-xs sm:text-sm text-stream-text-secondary">
+                  <input
+                    type="checkbox"
+                    checked={contentMissingVideoOnly}
+                    onChange={(e) => setContentMissingVideoOnly(e.target.checked)}
+                    className="rounded border-stream-gray"
+                  />
+                  Missing video URL
+                </label>
                 <button
                   type="button"
                   onClick={() => { setEditingContentId(null); setContentFormOpen(true); }}
@@ -366,7 +407,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {contentList.map((c) => (
+                  {filteredContent.map((c) => (
                     <tr key={c.id} className="border-t border-stream-gray">
                       <td className="p-4 w-10">
                         <input
