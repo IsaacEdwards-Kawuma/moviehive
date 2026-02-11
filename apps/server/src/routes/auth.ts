@@ -85,6 +85,10 @@ authRouter.post('/login', async (req, res) => {
     res.status(401).json({ error: 'Invalid email or password' });
     return;
   }
+  if (user.disabled) {
+    res.status(403).json({ error: 'This account has been disabled by an administrator.' });
+    return;
+  }
   if (!user.passwordHash) {
     res.status(401).json({ error: 'This account uses Google Sign-In. Please sign in with Google.' });
     return;
@@ -128,6 +132,10 @@ authRouter.post('/refresh-token', async (req, res) => {
   const user = await prisma.user.findUnique({ where: { id: payload.userId } });
   if (!user) {
     res.status(401).json({ error: 'User not found' });
+    return;
+  }
+  if (user.disabled) {
+    res.status(403).json({ error: 'This account has been disabled by an administrator.' });
     return;
   }
   const accessToken = signAccessToken({ userId: user.id, email: user.email });

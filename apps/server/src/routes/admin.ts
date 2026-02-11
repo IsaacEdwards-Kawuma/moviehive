@@ -115,6 +115,7 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
         email: true,
         role: true,
         subscriptionTier: true,
+        disabled: true,
         createdAt: true,
         _count: {
           select: {
@@ -170,6 +171,29 @@ router.patch('/users/:id/role', requireAuth, requireAdmin, async (req, res) => {
   } catch (error) {
     console.error('Failed to update role:', error);
     res.status(500).json({ message: 'Failed to update role' });
+  }
+});
+
+// Disable/enable user and optionally logout everywhere (admin only)
+router.patch('/users/:id/status', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { disabled, logoutSessions } = req.body as { disabled?: boolean; logoutSessions?: boolean };
+    if (typeof disabled !== 'boolean') {
+      return res.status(400).json({ message: 'disabled flag is required' });
+    }
+    const user = await prisma.user.update({
+      where: { id },
+      data: { disabled },
+      select: { id: true, email: true, disabled: true, role: true },
+    });
+    if (logoutSessions) {
+      await prisma.session.deleteMany({ where: { userId: id } });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error('Failed to update user status:', error);
+    res.status(500).json({ message: 'Failed to update user status' });
   }
 });
 

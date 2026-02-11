@@ -261,7 +261,7 @@ export const api = {
   },
   admin: {
     getStats: () => request<{ totalUsers: number; totalContent: number; totalWatchHistory: number; totalProfiles: number }>('/admin/stats'),
-    getUsers: () => request<Array<{ id: string; email: string; role: string; subscriptionTier: string; createdAt: string; _count: { profiles: number } }>>('/admin/users'),
+    getUsers: () => request<Array<{ id: string; email: string; role: string; subscriptionTier: string; disabled: boolean; createdAt: string; _count: { profiles: number } }>>('/admin/users'),
     updateUserRole: (id: string, role: string) => request<{ id: string; email: string; role: string }>(`/admin/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
     getContentList: (params?: { type?: string; page?: number; limit?: number }) =>
       request<{ data: AdminContent[]; total: number; page: number; limit: number; totalPages: number }>('/admin/content', { params: params as Record<string, string | number | undefined> }),
@@ -280,6 +280,11 @@ export const api = {
       request<Array<{ id: string; name: string; slug: string }>>('/admin/genres/ensure-defaults', { method: 'POST' }),
     getAnalytics: () => request<AdminAnalytics>('/admin/analytics'),
     getHealthSummary: () => request<AdminHealthSummary>('/admin/health-summary'),
+    updateUserStatus: (id: string, disabled: boolean, logoutSessions?: boolean) =>
+      request<{ id: string; email: string; disabled: boolean; role: string }>(`/admin/users/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ disabled, logoutSessions }),
+      }),
   },
 };
 

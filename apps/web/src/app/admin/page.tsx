@@ -10,7 +10,15 @@ import { AdminMonitoring } from '@/components/admin/AdminMonitoring';
 import { LogoIcon } from '@/components/Logo';
 
 type Tab = 'overview' | 'users' | 'content' | 'monitoring';
-type AdminUser = { id: string; email: string; role: string; subscriptionTier: string; createdAt: string; _count: { profiles: number } };
+type AdminUser = {
+  id: string;
+  email: string;
+  role: string;
+  subscriptionTier: string;
+  disabled: boolean;
+  createdAt: string;
+  _count: { profiles: number };
+};
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -32,6 +40,7 @@ export default function AdminDashboard() {
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState<'ALL' | 'USER' | 'ADMIN'>('ALL');
   const [userPlanFilter, setUserPlanFilter] = useState<'ALL' | 'free' | 'basic' | 'standard' | 'premium' | 'avod'>('ALL');
+  const [userStatusFilter, setUserStatusFilter] = useState<'ALL' | 'ACTIVE' | 'DISABLED'>('ALL');
   const [contentSearch, setContentSearch] = useState('');
   const [contentTypeFilter, setContentTypeFilter] = useState<'ALL' | 'movie' | 'series'>('ALL');
   const [contentMissingVideoOnly, setContentMissingVideoOnly] = useState(false);
@@ -168,6 +177,8 @@ export default function AdminDashboard() {
     if (q && !u.email.toLowerCase().includes(q)) return false;
     if (userRoleFilter !== 'ALL' && u.role !== userRoleFilter) return false;
     if (userPlanFilter !== 'ALL' && u.subscriptionTier !== userPlanFilter) return false;
+    if (userStatusFilter === 'ACTIVE' && u.disabled) return false;
+    if (userStatusFilter === 'DISABLED' && !u.disabled) return false;
     return true;
   });
 
@@ -297,6 +308,15 @@ export default function AdminDashboard() {
                   <option value="premium">Premium</option>
                   <option value="avod">AVOD</option>
                 </select>
+                <select
+                  value={userStatusFilter}
+                  onChange={(e) => setUserStatusFilter(e.target.value as typeof userStatusFilter)}
+                  className="bg-stream-dark-gray border border-stream-gray rounded px-2 py-1"
+                >
+                  <option value="ALL">All statuses</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="DISABLED">Disabled</option>
+                </select>
               </div>
             </div>
             <div className="bg-stream-dark-gray rounded overflow-hidden">
@@ -307,6 +327,7 @@ export default function AdminDashboard() {
                     <th className="p-4 text-left text-sm font-medium">Email</th>
                     <th className="p-4 text-left text-sm font-medium">Role</th>
                     <th className="p-4 text-left text-sm font-medium">Plan</th>
+                    <th className="p-4 text-left text-sm font-medium">Status</th>
                     <th className="p-4 text-left text-sm font-medium">Profiles</th>
                     <th className="p-4 text-left text-sm font-medium">Joined</th>
                     <th className="p-4 text-left text-sm font-medium">Actions</th>
@@ -322,9 +343,18 @@ export default function AdminDashboard() {
                         </span>
                       </td>
                       <td className="p-4 text-stream-text-secondary text-sm capitalize">{u.subscriptionTier}</td>
+                      <td className="p-4">
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${
+                            u.disabled ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/15 text-emerald-200'
+                          }`}
+                        >
+                          {u.disabled ? 'DISABLED' : 'ACTIVE'}
+                        </span>
+                      </td>
                       <td className="p-4">{u._count.profiles}</td>
                       <td className="p-4 text-stream-text-secondary text-sm">{new Date(u.createdAt).toLocaleDateString()}</td>
-                      <td className="p-4">
+                      <td className="p-4 flex flex-wrap items-center gap-2">
                         <select
                           value={u.role}
                           onChange={(e) => handleRoleChange(u.id, e.target.value)}
@@ -334,6 +364,34 @@ export default function AdminDashboard() {
                           <option value="USER">USER</option>
                           <option value="ADMIN">ADMIN</option>
                         </select>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const targetDisabled = !u.disabled;
+                            const confirmMsg = targetDisabled
+                              ? 'Disable this account and log out all active sessions?'
+                              : 'Re-enable this account?';
+                            if (!confirm(confirmMsg)) return;
+                            try {
+                              const updated = await api.admin.updateUserStatus(u.id, targetDisabled, targetDisabled);
+                              setUsers((prev) =>
+                                prev.map((usr) =>
+                                  usr.id === u.id ? { ...usr, disabled: updated.disabled } : usr
+                                )
+                              );
+                            } catch {
+                              alert('Failed to update user status');
+                            }
+                          }}
+                          disabled={u.id === user?.id}
+                          className={`px-2 py-1 rounded text-xs font-medium border ${
+                            u.disabled
+                              ? 'border-emerald-400 text-emerald-300 hover:bg-emerald-500/10'
+                              : 'border-red-400 text-red-300 hover:bg-red-500/10'
+                          } disabled:opacity-40`}
+                        >
+                          {u.disabled ? 'Enable' : 'Disable'}
+                        </button>
                       </td>
                     </tr>
                   ))}
