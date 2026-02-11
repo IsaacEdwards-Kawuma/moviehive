@@ -220,8 +220,8 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-stream-bg text-white">
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-stream-bg/95 border-b border-stream-dark-gray">
-        <div className="flex items-center gap-6">
+      <header className="fixed top-0 left-0 right-0 z-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 bg-stream-bg/95 border-b border-stream-dark-gray">
+        <div className="flex items-center gap-4 sm:gap-6">
           <div className="flex items-center gap-2">
             <LogoIcon className="w-8 h-8" />
             <div>
@@ -231,7 +231,7 @@ export default function AdminDashboard() {
               <span className="text-xs text-stream-text-secondary">Movies, Anytime, Anywhere</span>
             </div>
           </div>
-          <nav className="flex gap-2">
+          <nav className="flex flex-wrap gap-2 mt-2 sm:mt-0">
             {tabs.map((t) => (
               <button
                 key={t.id}
@@ -244,12 +244,17 @@ export default function AdminDashboard() {
             ))}
           </nav>
         </div>
-        <Link href="/" className="text-sm text-stream-text-secondary hover:text-white">
-          ← Back to app
-        </Link>
+        <div className="flex justify-end">
+          <Link
+            href="/"
+            className="text-xs sm:text-sm text-stream-text-secondary hover:text-white whitespace-nowrap"
+          >
+            ← Back to app
+          </Link>
+        </div>
       </header>
 
-      <main className="p-8 pt-24">
+      <main className="px-4 sm:px-8 pt-24 pb-8">
         {tab === 'overview' && (
           <>
             <h1 className="text-3xl font-bold mb-8 text-stream-accent">Admin Dashboard</h1>
