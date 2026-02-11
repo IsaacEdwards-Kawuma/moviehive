@@ -1,6 +1,6 @@
 'use client';
 
-import type { AdminAnalytics } from '@/lib/api';
+import type { AdminAnalytics, AdminHealthSummary } from '@/lib/api';
 
 function secondsToHms(totalSeconds: number): string {
   const sec = Math.max(0, Math.floor(totalSeconds));
@@ -13,9 +13,11 @@ function secondsToHms(totalSeconds: number): string {
 
 export function AdminMonitoring({
   analytics,
+  health,
   onRefresh,
 }: {
   analytics: AdminAnalytics | null;
+  health: AdminHealthSummary | null;
   onRefresh: () => void;
 }) {
   if (!analytics) {
@@ -118,6 +120,52 @@ export function AdminMonitoring({
                 {secondsToHms(kidsVsRegularWatchSeconds.regular)}
               </p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-4">System health</h2>
+        <div className="bg-stream-dark-gray rounded p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-stream-black rounded p-3 flex flex-col gap-1">
+            <p className="text-xs text-stream-text-secondary">API process</p>
+            <p className="text-sm">
+              Status:{' '}
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-emerald-500/20 text-emerald-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                {health?.app.status ?? 'unknown'}
+              </span>
+            </p>
+            {health && (
+              <p className="text-xs text-stream-text-secondary">
+                Uptime: {secondsToHms(health.app.uptimeSeconds)}
+              </p>
+            )}
+          </div>
+          <div className="bg-stream-black rounded p-3 flex flex-col gap-1">
+            <p className="text-xs text-stream-text-secondary">Database</p>
+            <p className="text-sm">
+              Status:{' '}
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
+                  health?.db.status === 'error'
+                    ? 'bg-red-500/20 text-red-300'
+                    : 'bg-emerald-500/20 text-emerald-300'
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    health?.db.status === 'error' ? 'bg-red-400' : 'bg-emerald-400'
+                  }`}
+                />
+                {health?.db.status ?? 'unknown'}
+              </span>
+            </p>
+            {health?.db.error && (
+              <p className="text-[11px] text-red-300/80 mt-1 line-clamp-2">
+                {health.db.error}
+              </p>
+            )}
           </div>
         </div>
       </div>

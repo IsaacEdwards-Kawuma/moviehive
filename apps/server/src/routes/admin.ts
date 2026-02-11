@@ -638,4 +638,35 @@ router.get('/analytics', requireAuth, requireAdmin, async (_req, res) => {
   }
 });
 
+// ---------- Health summary (admin only) ----------
+
+router.get('/health-summary', requireAuth, requireAdmin, async (_req, res) => {
+  try {
+    const uptimeSeconds = Math.floor(process.uptime());
+    const startedAt = new Date(Date.now() - uptimeSeconds * 1000).toISOString();
+    let dbStatus: 'ok' | 'error' = 'ok';
+    let dbError: string | null = null;
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+    } catch (e) {
+      dbStatus = 'error';
+      dbError = e instanceof Error ? e.message : 'Unknown DB error';
+    }
+    res.json({
+      app: {
+        status: 'ok',
+        uptimeSeconds,
+        startedAt,
+      },
+      db: {
+        status: dbStatus,
+        error: dbError,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to fetch health summary:', error);
+    res.status(500).json({ message: 'Failed to fetch health summary' });
+  }
+});
+
 export { router as adminRouter };

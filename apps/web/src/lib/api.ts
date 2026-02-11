@@ -279,6 +279,7 @@ export const api = {
     ensureDefaultGenres: () =>
       request<Array<{ id: string; name: string; slug: string }>>('/admin/genres/ensure-defaults', { method: 'POST' }),
     getAnalytics: () => request<AdminAnalytics>('/admin/analytics'),
+    getHealthSummary: () => request<AdminHealthSummary>('/admin/health-summary'),
   },
 };
 
@@ -352,6 +353,18 @@ export type AdminAnalytics = {
   topGenresByWatchCount: Array<{ id: string; name: string; slug: string; watchCount: number }>;
   signupsByDay: Array<{ date: string; count: number }>;
   kidsVsRegularWatchSeconds: { kids: number; regular: number };
+};
+
+export type AdminHealthSummary = {
+  app: {
+    status: string;
+    uptimeSeconds: number;
+    startedAt: string;
+  };
+  db: {
+    status: 'ok' | 'error';
+    error: string | null;
+  };
 };
 
 export type Content = {

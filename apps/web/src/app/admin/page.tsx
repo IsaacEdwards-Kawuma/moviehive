@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import api, { type AdminContent, type AdminContentCreate, type AdminAnalytics } from '@/lib/api';
+import api, { type AdminContent, type AdminContentCreate, type AdminAnalytics, type AdminHealthSummary } from '@/lib/api';
 import { AdminContentForm } from '@/components/admin/AdminContentForm';
 import { AdminMonitoring } from '@/components/admin/AdminMonitoring';
 import { LogoIcon } from '@/components/Logo';
@@ -22,6 +22,7 @@ export default function AdminDashboard() {
   const [contentPage, setContentPage] = useState(1);
   const [contentTotal, setContentTotal] = useState(0);
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
+  const [health, setHealth] = useState<AdminHealthSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [contentFormOpen, setContentFormOpen] = useState(false);
@@ -53,6 +54,11 @@ export default function AdminDashboard() {
     setAnalytics(data);
   };
 
+  const loadHealth = async () => {
+    const data = await api.admin.getHealthSummary();
+    setHealth(data);
+  };
+
   useEffect(() => {
     if (!isHydrated) return;
     if (user?.role !== 'ADMIN') {
@@ -76,7 +82,10 @@ export default function AdminDashboard() {
   }, [tab, contentPage]);
 
   useEffect(() => {
-    if (tab === 'monitoring' && user?.role === 'ADMIN') loadAnalytics();
+    if (tab === 'monitoring' && user?.role === 'ADMIN') {
+      loadAnalytics();
+      loadHealth();
+    }
   }, [tab]);
 
   const handleRoleChange = async (id: string, role: string) => {
@@ -474,7 +483,16 @@ export default function AdminDashboard() {
           </>
         )}
 
-        {tab === 'monitoring' && <AdminMonitoring analytics={analytics} onRefresh={loadAnalytics} />}
+        {tab === 'monitoring' && (
+          <AdminMonitoring
+            analytics={analytics}
+            health={health}
+            onRefresh={() => {
+              loadAnalytics();
+              loadHealth();
+            }}
+          />
+        )}
       </main>
 
       {contentFormOpen && (
