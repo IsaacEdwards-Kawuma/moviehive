@@ -44,6 +44,7 @@ export default function AdminDashboard() {
   const [contentSearch, setContentSearch] = useState('');
   const [contentTypeFilter, setContentTypeFilter] = useState<'ALL' | 'movie' | 'series'>('ALL');
   const [contentMissingVideoOnly, setContentMissingVideoOnly] = useState(false);
+  const [navOpen, setNavOpen] = useState(true);
 
   const loadOverview = async () => {
     const [statsRes, usersRes] = await Promise.all([api.admin.getStats(), api.admin.getUsers()]);
@@ -243,20 +244,31 @@ export default function AdminDashboard() {
       <main className="pt-20 sm:pt-24 pb-8 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-6">
           {/* Sidebar navigation */}
-          <aside className="md:w-56 flex-shrink-0">
-            <nav className="bg-stream-dark-gray/80 border border-stream-dark-gray rounded-xl p-3 sm:p-4 space-y-1 sticky top-24">
+          <aside className={`flex-shrink-0 transition-[width] duration-200 md:${navOpen ? 'w-56' : 'w-16'}`}>
+            <nav className="bg-stream-dark-gray/80 border border-stream-dark-gray rounded-xl p-2 sm:p-3 space-y-2 sticky top-24 flex flex-col items-stretch">
+              <button
+                type="button"
+                onClick={() => setNavOpen((v) => !v)}
+                className="mb-1 self-end px-2 py-1 rounded text-xs text-stream-text-secondary hover:bg-stream-black"
+                aria-label={navOpen ? 'Collapse navigation' : 'Expand navigation'}
+              >
+                {navOpen ? '☰' : '☷'}
+              </button>
               {tabs.map((t) => (
                 <button
                   key={t.id}
                   type="button"
                   onClick={() => setTab(t.id)}
-                  className={`w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors ${
+                  className={`w-full flex items-center gap-2 rounded text-sm font-medium transition-colors px-2 py-2 ${
                     tab === t.id
                       ? 'bg-stream-accent text-white'
                       : 'text-stream-text-secondary hover:bg-stream-black hover:text-white'
                   }`}
                 >
-                  {t.label}
+                  <span className="w-6 text-center text-xs uppercase">
+                    {t.label.charAt(0)}
+                  </span>
+                  {navOpen && <span className="truncate">{t.label}</span>}
                 </button>
               ))}
             </nav>
