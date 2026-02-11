@@ -2,9 +2,79 @@ import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 import OpenAI from 'openai';
+import { createWorker } from 'tesseract.js';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/admin.js';
+
+type ExtractResult = {
+  title: string | null;
+  description: string | null;
+  releaseYear: number | null;
+  rating: string | null;
+  duration: number | null;
+  type: 'movie' | 'series';
+};
+
+/** Free OCR-based extraction: parse text from image and guess title, year, rating, duration. */
+async function extractFromImageOCR(buffer: Buffer): Promise<ExtractResult> {
+  const worker = await createWorker('eng');
+  try {
+    const { data } = await worker.recognize(buffer);
+    const text = (data.text || '').trim();
+    await worker.terminate();
+
+    const result: ExtractResult = {
+      title: null,
+      description: null,
+      releaseYear: null,
+      rating: null,
+      duration: null,
+      type: 'movie',
+    };
+
+    if (!text) return result;
+
+    const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+
+    // Year: 1900–2100
+    const yearMatch = text.match(/\b(19\d{2}|20[0-2]\d)\b/);
+    if (yearMatch) result.releaseYear = parseInt(yearMatch[1], 10);
+
+    // Rating: common US labels
+    const ratingRegex = /\b(G|PG|PG-13|R|NC-17|TV-Y|TV-Y7|TV-G|TV-PG|TV-14|TV-MA)\b/i;
+    const ratingMatch = text.match(ratingRegex);
+    if (ratingMatch) result.rating = ratingMatch[1];
+
+    // Duration: "120 min", "1h 30m", "90 min", "2h 15m"
+    const minMatch = text.match(/(\d+)\s*min(?:ute)?s?/i) || text.match(/(\d+)\s*h(?:our)?s?\s*(\d+)\s*m/i);
+    if (minMatch) {
+      if (minMatch[2] !== undefined) {
+        result.duration = parseInt(minMatch[1], 10) * 60 + parseInt(minMatch[2], 10);
+      } else {
+        result.duration = parseInt(minMatch[1], 10);
+      }
+    }
+
+    // Title: first line that looks like a title (not only digits, not too short, not a rating line)
+    for (const line of lines) {
+      const clean = line.replace(/\s+/g, ' ').trim();
+      if (clean.length < 2 || clean.length > 200) continue;
+      if (/^\d+$/.test(clean) || ratingRegex.test(clean)) continue;
+      if (/^\d+\s*min/i.test(clean)) continue;
+      result.title = clean;
+      break;
+    }
+
+    return result;
+  } finally {
+    try {
+      await worker.terminate();
+    } catch {
+      /* ignore */
+    }
+  }
+}
 
 const router = Router();
 
@@ -492,48 +562,46 @@ router.post(
       return;
     }
     const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      res.status(503).json({
-        error: 'Image extraction is not configured. Set OPENAI_API_KEY in the server environment.',
-      });
-      return;
-    }
     try {
-      const base64 = req.file.buffer.toString('base64');
-      const mime = req.file.mimetype || 'image/jpeg';
-      const dataUrl = `data:${mime};base64,${base64}`;
-
-      const openai = new OpenAI({ apiKey });
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'user', content: [{ type: 'text', text: EXTRACT_PROMPT }, { type: 'image_url', image_url: { url: dataUrl } }] },
-        ],
-        max_tokens: 500,
-      });
-      const raw = completion.choices[0]?.message?.content?.trim();
-      if (!raw) {
-        res.status(502).json({ error: 'No response from vision service' });
-        return;
+      if (apiKey) {
+        const base64 = req.file.buffer.toString('base64');
+        const mime = req.file.mimetype || 'image/jpeg';
+        const dataUrl = `data:${mime};base64,${base64}`;
+        const openai = new OpenAI({ apiKey });
+        const completion = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'user', content: [{ type: 'text', text: EXTRACT_PROMPT }, { type: 'image_url', image_url: { url: dataUrl } }] },
+          ],
+          max_tokens: 500,
+        });
+        const raw = completion.choices[0]?.message?.content?.trim();
+        if (!raw) {
+          res.status(502).json({ error: 'No response from vision service' });
+          return;
+        }
+        const json = raw.replace(/^```json?\s*|\s*```$/g, '').trim();
+        const parsed = JSON.parse(json) as {
+          title?: string | null;
+          description?: string | null;
+          releaseYear?: number | null;
+          rating?: string | null;
+          duration?: number | null;
+          type?: string | null;
+        };
+        const result: ExtractResult = {
+          title: typeof parsed.title === 'string' ? parsed.title : null,
+          description: typeof parsed.description === 'string' ? parsed.description : null,
+          releaseYear: typeof parsed.releaseYear === 'number' ? parsed.releaseYear : null,
+          rating: typeof parsed.rating === 'string' ? parsed.rating : null,
+          duration: typeof parsed.duration === 'number' ? parsed.duration : null,
+          type: parsed.type === 'series' ? 'series' : 'movie',
+        };
+        res.json(result);
+      } else {
+        const result = await extractFromImageOCR(req.file.buffer);
+        res.json(result);
       }
-      const json = raw.replace(/^```json?\s*|\s*```$/g, '').trim();
-      const parsed = JSON.parse(json) as {
-        title?: string | null;
-        description?: string | null;
-        releaseYear?: number | null;
-        rating?: string | null;
-        duration?: number | null;
-        type?: string | null;
-      };
-      const result = {
-        title: typeof parsed.title === 'string' ? parsed.title : null,
-        description: typeof parsed.description === 'string' ? parsed.description : null,
-        releaseYear: typeof parsed.releaseYear === 'number' ? parsed.releaseYear : null,
-        rating: typeof parsed.rating === 'string' ? parsed.rating : null,
-        duration: typeof parsed.duration === 'number' ? parsed.duration : null,
-        type: parsed.type === 'series' ? 'series' : 'movie',
-      };
-      res.json(result);
     } catch (err) {
       if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
