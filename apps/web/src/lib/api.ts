@@ -350,6 +350,8 @@ export type AdminAnalytics = {
   watchByDay: Array<{ date: string; count: number }>;
   topContentByWatchTime: Array<{ id: string; title: string; type: string; totalSeconds: number; watchCount: number }>;
   topGenresByWatchCount: Array<{ id: string; name: string; slug: string; watchCount: number }>;
+  signupsByDay: Array<{ date: string; count: number }>;
+  kidsVsRegularWatchSeconds: { kids: number; regular: number };
 };
 
 export type Content = {

@@ -447,6 +447,9 @@ router.get('/analytics', requireAuth, requireAdmin, async (_req, res) => {
       watchLast7Days,
       topWatchTimeRaw,
       genres,
+      userSignupsLast30,
+      kidsWatchAgg,
+      regularWatchAgg,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.content.count(),
@@ -498,6 +501,28 @@ router.get('/analytics', requireAuth, requireAdmin, async (_req, res) => {
       }),
       prisma.genre.findMany({
         orderBy: { name: 'asc' },
+      }),
+      prisma.user.findMany({
+        where: {
+          createdAt: {
+            gte: (() => {
+              const d = new Date();
+              d.setDate(d.getDate() - 29); // last 30 days including today
+              d.setHours(0, 0, 0, 0);
+              return d;
+            })(),
+          },
+        },
+        select: { createdAt: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.watchHistory.aggregate({
+        where: { profile: { isKids: true } },
+        _sum: { progress: true },
+      }),
+      prisma.watchHistory.aggregate({
+        where: { profile: { isKids: false } },
+        _sum: { progress: true },
       }),
     ]);
 
@@ -565,6 +590,27 @@ router.get('/analytics', requireAuth, requireAdmin, async (_req, res) => {
         watchCount: count,
       }));
 
+    // User signups per day (last 30 days)
+    const signupDailyMap = new Map<string, number>();
+    const today30 = new Date();
+    today30.setHours(0, 0, 0, 0);
+    for (let i = 29; i >= 0; i -= 1) {
+      const d = new Date(today30);
+      d.setDate(today30.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      signupDailyMap.set(key, 0);
+    }
+    for (const u of userSignupsLast30) {
+      const key = u.createdAt.toISOString().slice(0, 10);
+      if (signupDailyMap.has(key)) {
+        signupDailyMap.set(key, (signupDailyMap.get(key) ?? 0) + 1);
+      }
+    }
+    const signupsByDay = Array.from(signupDailyMap.entries()).map(([date, count]) => ({ date, count }));
+
+    const kidsWatchSeconds = kidsWatchAgg._sum.progress ?? 0;
+    const regularWatchSeconds = regularWatchAgg._sum.progress ?? 0;
+
     res.json({
       overview: {
         totalUsers,
@@ -580,6 +626,11 @@ router.get('/analytics', requireAuth, requireAdmin, async (_req, res) => {
       watchByDay,
       topContentByWatchTime,
       topGenresByWatchCount,
+      signupsByDay,
+      kidsVsRegularWatchSeconds: {
+        kids: kidsWatchSeconds,
+        regular: regularWatchSeconds,
+      },
     });
   } catch (error) {
     console.error('Failed to fetch analytics:', error);

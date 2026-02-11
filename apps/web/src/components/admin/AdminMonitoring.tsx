@@ -36,6 +36,8 @@ export function AdminMonitoring({
     watchByDay,
     topContentByWatchTime,
     topGenresByWatchCount,
+    signupsByDay,
+    kidsVsRegularWatchSeconds,
   } = analytics;
 
   return (
@@ -69,6 +71,53 @@ export function AdminMonitoring({
           <div className="bg-stream-dark-gray p-4 rounded">
             <div className="text-2xl font-bold">{overview.totalProfiles}</div>
             <div className="text-stream-text-secondary text-sm">Profiles</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+        <div>
+          <h2 className="text-lg font-semibold mb-4">User signups (last 30 days)</h2>
+          <div className="bg-stream-dark-gray rounded p-4">
+            {signupsByDay.length === 0 ? (
+              <p className="text-stream-text-secondary text-sm">No signups yet</p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {(() => {
+                  const max = Math.max(...signupsByDay.map((d) => d.count), 1);
+                  return signupsByDay.map((d) => (
+                    <div key={d.date} className="flex items-center gap-3 text-xs sm:text-sm">
+                      <span className="w-16 text-stream-text-secondary">{d.date.slice(5)}</span>
+                      <div className="flex-1 h-2 rounded bg-stream-black overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-emerald-400/70 to-emerald-400"
+                          style={{ width: `${(d.count / max) * 100 || 4}%` }}
+                        />
+                      </div>
+                      <span className="w-8 text-right">{d.count}</span>
+                    </div>
+                  ));
+                })()}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Watch time: kids vs regular profiles</h2>
+          <div className="bg-stream-dark-gray rounded p-4 grid grid-cols-2 gap-4">
+            <div className="bg-stream-black rounded p-3">
+              <p className="text-xs text-stream-text-secondary mb-1">Kids profiles</p>
+              <p className="text-lg font-bold">
+                {secondsToHms(kidsVsRegularWatchSeconds.kids)}
+              </p>
+            </div>
+            <div className="bg-stream-black rounded p-3">
+              <p className="text-xs text-stream-text-secondary mb-1">Regular profiles</p>
+              <p className="text-lg font-bold">
+                {secondsToHms(kidsVsRegularWatchSeconds.regular)}
+              </p>
+            </div>
           </div>
         </div>
       </div>
