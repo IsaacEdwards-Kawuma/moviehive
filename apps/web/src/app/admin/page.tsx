@@ -28,6 +28,9 @@ export default function AdminDashboard() {
   const [editingContentId, setEditingContentId] = useState<string | null>(null);
   const [selectedContentIds, setSelectedContentIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState<'ALL' | 'USER' | 'ADMIN'>('ALL');
+  const [userPlanFilter, setUserPlanFilter] = useState<'ALL' | 'free' | 'basic' | 'standard' | 'premium' | 'avod'>('ALL');
 
   const loadOverview = async () => {
     const [statsRes, usersRes] = await Promise.all([api.admin.getStats(), api.admin.getUsers()]);
@@ -148,6 +151,14 @@ export default function AdminDashboard() {
     loadOverview();
   };
 
+  const filteredUsers = users.filter((u) => {
+    const q = userSearch.trim().toLowerCase();
+    if (q && !u.email.toLowerCase().includes(q)) return false;
+    if (userRoleFilter !== 'ALL' && u.role !== userRoleFilter) return false;
+    if (userPlanFilter !== 'ALL' && u.subscriptionTier !== userPlanFilter) return false;
+    return true;
+  });
+
   if (!isHydrated) {
     return (
       <div className="min-h-screen bg-stream-bg flex items-center justify-center">
@@ -231,6 +242,38 @@ export default function AdminDashboard() {
         {tab === 'users' && (
           <>
             <h1 className="text-2xl font-bold mb-4 sm:mb-6">Users</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <input
+                type="search"
+                placeholder="Search by email…"
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                className="w-full sm:max-w-xs bg-stream-dark-gray border border-stream-gray rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stream-accent"
+              />
+              <div className="flex flex-wrap gap-2 text-sm">
+                <select
+                  value={userRoleFilter}
+                  onChange={(e) => setUserRoleFilter(e.target.value as typeof userRoleFilter)}
+                  className="bg-stream-dark-gray border border-stream-gray rounded px-2 py-1"
+                >
+                  <option value="ALL">All roles</option>
+                  <option value="USER">USER</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+                <select
+                  value={userPlanFilter}
+                  onChange={(e) => setUserPlanFilter(e.target.value as typeof userPlanFilter)}
+                  className="bg-stream-dark-gray border border-stream-gray rounded px-2 py-1"
+                >
+                  <option value="ALL">All plans</option>
+                  <option value="free">Free</option>
+                  <option value="basic">Basic</option>
+                  <option value="standard">Standard</option>
+                  <option value="premium">Premium</option>
+                  <option value="avod">AVOD</option>
+                </select>
+              </div>
+            </div>
             <div className="bg-stream-dark-gray rounded overflow-hidden">
               <div className="overflow-x-auto">
               <table className="w-full min-w-[640px]">
@@ -245,7 +288,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((u) => (
+                  {filteredUsers.map((u) => (
                     <tr key={u.id} className="border-t border-stream-gray">
                       <td className="p-4">{u.email}</td>
                       <td className="p-4">
