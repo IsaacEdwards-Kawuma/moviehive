@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/Providers';
 import { SentryInit } from '@/components/SentryInit';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className={`min-h-screen bg-stream-bg text-stream-text-primary antialiased ${inter.className}`}>
         <SentryInit />
         <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );
