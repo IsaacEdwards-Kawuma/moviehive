@@ -253,6 +253,7 @@ export default function AdminDashboard() {
         {tab === 'overview' && (
           <>
             <h1 className="text-3xl font-bold mb-8 text-stream-accent">Admin Dashboard</h1>
+            {/* Key stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <div className="bg-stream-dark-gray p-4 rounded">
                 <div className="text-2xl font-bold">{stats?.totalUsers ?? 0}</div>
@@ -271,7 +272,76 @@ export default function AdminDashboard() {
                 <div className="text-stream-text-secondary text-sm">Total Profiles</div>
               </div>
             </div>
-            <p className="text-stream-text-secondary">Use the tabs above to manage users, content, and view monitoring data.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              {/* Quick actions */}
+              <div className="bg-stream-dark-gray rounded p-5 space-y-3">
+                <h2 className="text-lg font-semibold mb-1">Quick actions</h2>
+                <p className="text-stream-text-secondary text-sm mb-3">
+                  Jump straight to common admin tasks.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTab('users')}
+                    className="px-3 py-2 rounded bg-stream-black text-sm hover:bg-white/5 transition-colors"
+                  >
+                    Manage users
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTab('content')}
+                    className="px-3 py-2 rounded bg-stream-black text-sm hover:bg-white/5 transition-colors"
+                  >
+                    Manage content
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTab('monitoring')}
+                    className="px-3 py-2 rounded bg-stream-black text-sm hover:bg-white/5 transition-colors"
+                  >
+                    Monitoring &amp; analytics
+                  </button>
+                </div>
+              </div>
+
+              {/* Needs attention */}
+              <div className="bg-stream-dark-gray rounded p-5 space-y-3">
+                <h2 className="text-lg font-semibold mb-1">Needs attention</h2>
+                <p className="text-stream-text-secondary text-sm">
+                  A quick glance at things worth checking.
+                </p>
+                <ul className="mt-2 space-y-1 text-sm">
+                  <li className="flex items-center justify-between">
+                    <span className="text-stream-text-secondary">Disabled users</span>
+                    <span className="font-semibold">
+                      {users.filter((u) => u.disabled).length}
+                    </span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span className="text-stream-text-secondary">Content with missing video URL (this page)</span>
+                    <span className="font-semibold">
+                      {contentList.filter((c) => !('videoUrl' in c) || !c.videoUrl).length}
+                    </span>
+                  </li>
+                  <li className="flex items-center justify-between">
+                    <span className="text-stream-text-secondary">System health</span>
+                    <button
+                      type="button"
+                      onClick={() => setTab('monitoring')}
+                      className="text-stream-accent hover:underline text-xs"
+                    >
+                      View in Monitoring
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <p className="text-stream-text-secondary text-sm">
+              Use the tabs above to drill into users, content, and detailed monitoring. This overview stays focused on
+              the big picture and quick access to what matters most.
+            </p>
           </>
         )}
 
