@@ -220,31 +220,17 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-stream-bg text-white">
-      <header className="fixed top-0 left-0 right-0 z-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 bg-stream-bg/95 border-b border-stream-dark-gray">
-        <div className="flex items-center gap-4 sm:gap-6">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-stream-bg/95 border-b border-stream-dark-gray">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center gap-2">
             <LogoIcon className="w-8 h-8" />
             <div>
               <Link href="/" className="text-stream-accent font-bold text-2xl block leading-tight">
                 MOVI HIVE
               </Link>
-              <span className="text-xs text-stream-text-secondary">Movies, Anytime, Anywhere</span>
+              <span className="text-xs text-stream-text-secondary">Admin dashboard</span>
             </div>
           </div>
-          <nav className="flex flex-wrap gap-2 mt-2 sm:mt-0">
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={`px-3 py-1.5 rounded text-sm font-medium ${tab === t.id ? 'bg-stream-accent text-white' : 'text-stream-text-secondary hover:bg-stream-dark-gray hover:text-white'}`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-        <div className="flex justify-end">
           <Link
             href="/"
             className="text-xs sm:text-sm text-stream-text-secondary hover:text-white whitespace-nowrap"
@@ -254,7 +240,30 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="px-4 sm:px-8 pt-24 pb-8">
+      <main className="pt-20 sm:pt-24 pb-8 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-6">
+          {/* Sidebar navigation */}
+          <aside className="md:w-56 flex-shrink-0">
+            <nav className="bg-stream-dark-gray/80 border border-stream-dark-gray rounded-xl p-3 sm:p-4 space-y-1 sticky top-24">
+              {tabs.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTab(t.id)}
+                  className={`w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors ${
+                    tab === t.id
+                      ? 'bg-stream-accent text-white'
+                      : 'text-stream-text-secondary hover:bg-stream-black hover:text-white'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </nav>
+          </aside>
+
+          {/* Main panel */}
+          <section className="flex-1">
         {tab === 'overview' && (
           <>
             <h1 className="text-3xl font-bold mb-8 text-stream-accent">Admin Dashboard</h1>
@@ -344,7 +353,7 @@ export default function AdminDashboard() {
             </div>
 
             <p className="text-stream-text-secondary text-sm">
-              Use the tabs above to drill into users, content, and detailed monitoring. This overview stays focused on
+              Use the navigation on the left to drill into users, content, and detailed monitoring. This overview stays focused on
               the big picture and quick access to what matters most.
             </p>
           </>
@@ -626,6 +635,8 @@ export default function AdminDashboard() {
             }}
           />
         )}
+          </section>
+        </div>
       </main>
 
       {contentFormOpen && (
