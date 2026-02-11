@@ -444,6 +444,9 @@ router.get('/analytics', requireAuth, requireAdmin, async (_req, res) => {
       recentWatchActivity,
       topContentByWatches,
       recentSearches,
+      watchLast7Days,
+      topWatchTimeRaw,
+      genres,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.content.count(),
@@ -472,7 +475,95 @@ router.get('/analytics', requireAuth, requireAdmin, async (_req, res) => {
         orderBy: { createdAt: 'desc' },
         distinct: ['query'],
       }),
+      prisma.watchHistory.findMany({
+        where: {
+          watchedAt: {
+            gte: (() => {
+              const d = new Date();
+              d.setDate(d.getDate() - 6); // last 7 days including today
+              d.setHours(0, 0, 0, 0);
+              return d;
+            })(),
+          },
+        },
+        select: { watchedAt: true },
+        orderBy: { watchedAt: 'asc' },
+      }),
+      prisma.watchHistory.groupBy({
+        by: ['contentId'],
+        _sum: { progress: true },
+        _count: { _all: true },
+        orderBy: { _sum: { progress: 'desc' } },
+        take: 10,
+      }),
+      prisma.genre.findMany({
+        orderBy: { name: 'asc' },
+      }),
     ]);
+
+    // Watch events per day (last 7 days)
+    const dailyMap = new Map<string, number>();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 6; i >= 0; i -= 1) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      dailyMap.set(key, 0);
+    }
+    for (const row of watchLast7Days) {
+      const key = row.watchedAt.toISOString().slice(0, 10);
+      if (dailyMap.has(key)) {
+        dailyMap.set(key, (dailyMap.get(key) ?? 0) + 1);
+      }
+    }
+    const watchByDay = Array.from(dailyMap.entries()).map(([date, count]) => ({ date, count }));
+
+    // Top content by total watch time (sum of progress seconds)
+    const contentIds = topWatchTimeRaw.map((r) => r.contentId);
+    const watchTimeContents = contentIds.length
+      ? await prisma.content.findMany({
+          where: { id: { in: contentIds } },
+          select: { id: true, title: true, type: true },
+        })
+      : [];
+    const contentMap = new Map(watchTimeContents.map((c) => [c.id, c]));
+    const topContentByWatchTime = topWatchTimeRaw.map((row) => {
+      const c = contentMap.get(row.contentId);
+      return {
+        id: row.contentId,
+        title: c?.title ?? 'Unknown',
+        type: c?.type ?? 'movie',
+        totalSeconds: row._sum.progress ?? 0,
+        watchCount: row._count._all,
+      };
+    });
+
+    // Top genres by watch count
+    const genreWatchCounts = await Promise.all(
+      genres.map(async (g) => {
+        const count = await prisma.watchHistory.count({
+          where: {
+            content: {
+              contentGenres: {
+                some: { genreId: g.id },
+              },
+            },
+          },
+        });
+        return { genre: g, count };
+      })
+    );
+    const topGenresByWatchCount = genreWatchCounts
+      .filter((g) => g.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+      .map(({ genre, count }) => ({
+        id: genre.id,
+        name: genre.name,
+        slug: genre.slug,
+        watchCount: count,
+      }));
 
     res.json({
       overview: {
@@ -486,6 +577,9 @@ router.get('/analytics', requireAuth, requireAdmin, async (_req, res) => {
       recentWatchActivity,
       topContentByWatches: topContentByWatches.map((c) => ({ id: c.id, title: c.title, type: c.type, watchCount: c._count.watchHistory })),
       recentSearches: recentSearches.map((s) => s.query),
+      watchByDay,
+      topContentByWatchTime,
+      topGenresByWatchCount,
     });
   } catch (error) {
     console.error('Failed to fetch analytics:', error);

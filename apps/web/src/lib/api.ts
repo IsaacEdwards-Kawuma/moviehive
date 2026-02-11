@@ -347,6 +347,9 @@ export type AdminAnalytics = {
   }>;
   topContentByWatches: Array<{ id: string; title: string; type: string; watchCount: number }>;
   recentSearches: string[];
+  watchByDay: Array<{ date: string; count: number }>;
+  topContentByWatchTime: Array<{ id: string; title: string; type: string; totalSeconds: number; watchCount: number }>;
+  topGenresByWatchCount: Array<{ id: string; name: string; slug: string; watchCount: number }>;
 };
 
 export type Content = {

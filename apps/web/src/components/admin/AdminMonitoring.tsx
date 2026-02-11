@@ -2,6 +2,15 @@
 
 import type { AdminAnalytics } from '@/lib/api';
 
+function secondsToHms(totalSeconds: number): string {
+  const sec = Math.max(0, Math.floor(totalSeconds));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m`;
+  return `${sec}s`;
+}
+
 export function AdminMonitoring({
   analytics,
   onRefresh,
@@ -17,7 +26,17 @@ export function AdminMonitoring({
     );
   }
 
-  const { overview, contentByType, recentContent, recentWatchActivity, topContentByWatches, recentSearches } = analytics;
+  const {
+    overview,
+    contentByType,
+    recentContent,
+    recentWatchActivity,
+    topContentByWatches,
+    recentSearches,
+    watchByDay,
+    topContentByWatchTime,
+    topGenresByWatchCount,
+  } = analytics;
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -68,6 +87,62 @@ export function AdminMonitoring({
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Watch activity (last 7 days)</h2>
+          <div className="bg-stream-dark-gray rounded p-4">
+            {watchByDay.length === 0 ? (
+              <p className="text-stream-text-secondary text-sm">No watch data yet</p>
+            ) : (
+              <div className="space-y-2">
+                {(() => {
+                  const max = Math.max(...watchByDay.map((d) => d.count), 1);
+                  return watchByDay.map((d) => (
+                    <div key={d.date} className="flex items-center gap-3 text-xs sm:text-sm">
+                      <span className="w-16 text-stream-text-secondary">{d.date.slice(5)}</span>
+                      <div className="flex-1 h-2 rounded bg-stream-black overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-stream-accent/70 to-stream-accent"
+                          style={{ width: `${(d.count / max) * 100 || 4}%` }}
+                        />
+                      </div>
+                      <span className="w-8 text-right">{d.count}</span>
+                    </div>
+                  ));
+                })()}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Top genres by watches</h2>
+          <div className="bg-stream-dark-gray rounded p-4">
+            {topGenresByWatchCount.length === 0 ? (
+              <p className="text-stream-text-secondary text-sm">No genre watch data yet</p>
+            ) : (
+              <div className="space-y-2">
+                {(() => {
+                  const max = Math.max(...topGenresByWatchCount.map((g) => g.watchCount), 1);
+                  return topGenresByWatchCount.map((g) => (
+                    <div key={g.id} className="flex items-center gap-3 text-xs sm:text-sm">
+                      <span className="min-w-[72px] sm:min-w-[96px] font-medium truncate">{g.name}</span>
+                      <div className="flex-1 h-2 rounded bg-stream-black overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-blue-500/70 to-blue-400"
+                          style={{ width: `${(g.watchCount / max) * 100 || 4}%` }}
+                        />
+                      </div>
+                      <span className="w-10 text-right">{g.watchCount}</span>
+                    </div>
+                  ));
+                })()}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div>
         <h2 className="text-lg font-semibold mb-4">Top content by watches</h2>
         <div className="bg-stream-dark-gray rounded overflow-hidden">
@@ -98,6 +173,42 @@ export function AdminMonitoring({
               )}
             </tbody>
           </table>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Top content by watch time</h2>
+        <div className="bg-stream-dark-gray rounded overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[320px]">
+              <thead className="bg-stream-black">
+                <tr>
+                  <th className="p-3 text-left text-sm font-medium">Title</th>
+                  <th className="p-3 text-left text-sm font-medium">Type</th>
+                  <th className="p-3 text-left text-sm font-medium">Total watch time</th>
+                  <th className="p-3 text-left text-sm font-medium">Events</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topContentByWatchTime.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="p-4 text-stream-text-secondary text-sm">
+                      No watch time data yet
+                    </td>
+                  </tr>
+                ) : (
+                  topContentByWatchTime.map((c) => (
+                    <tr key={c.id} className="border-t border-stream-gray">
+                      <td className="p-3">{c.title}</td>
+                      <td className="p-3 capitalize">{c.type}</td>
+                      <td className="p-3 text-sm">{secondsToHms(c.totalSeconds)}</td>
+                      <td className="p-3 text-sm">{c.watchCount}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
