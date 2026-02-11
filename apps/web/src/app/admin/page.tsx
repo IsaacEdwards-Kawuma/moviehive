@@ -44,7 +44,6 @@ export default function AdminDashboard() {
   const [contentSearch, setContentSearch] = useState('');
   const [contentTypeFilter, setContentTypeFilter] = useState<'ALL' | 'movie' | 'series'>('ALL');
   const [contentMissingVideoOnly, setContentMissingVideoOnly] = useState(false);
-  const [navOpen, setNavOpen] = useState(true);
 
   const loadOverview = async () => {
     const [statsRes, usersRes] = await Promise.all([api.admin.getStats(), api.admin.getUsers()]);
@@ -244,33 +243,47 @@ export default function AdminDashboard() {
       <main className="pt-20 sm:pt-24 pb-8 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-6">
           {/* Sidebar navigation */}
-          <aside className={`flex-shrink-0 transition-[width] duration-200 md:${navOpen ? 'w-56' : 'w-16'}`}>
-            <nav className="bg-stream-dark-gray/80 border border-stream-dark-gray rounded-xl p-2 sm:p-3 space-y-2 sticky top-24 flex flex-col items-stretch">
-              <button
-                type="button"
-                onClick={() => setNavOpen((v) => !v)}
-                className="mb-1 self-end px-2 py-1 rounded text-xs text-stream-text-secondary hover:bg-stream-black"
-                aria-label={navOpen ? 'Collapse navigation' : 'Expand navigation'}
-              >
-                {navOpen ? '☰' : '☷'}
-              </button>
-              {tabs.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setTab(t.id)}
-                  className={`w-full flex items-center gap-2 rounded text-sm font-medium transition-colors px-2 py-2 ${
-                    tab === t.id
-                      ? 'bg-stream-accent text-white'
-                      : 'text-stream-text-secondary hover:bg-stream-black hover:text-white'
-                  }`}
-                >
-                  <span className="w-6 text-center text-xs uppercase">
-                    {t.label.charAt(0)}
-                  </span>
-                  {navOpen && <span className="truncate">{t.label}</span>}
-                </button>
-              ))}
+          <aside className="flex-shrink-0">
+            <nav className="bg-stream-dark-gray/80 border border-stream-dark-gray rounded-xl p-2 sm:p-3 sticky top-24 flex flex-col items-center gap-2 w-12 sm:w-14">
+              {tabs.map((t) => {
+                const active = tab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTab(t.id)}
+                    className={`w-10 h-10 sm:w-11 sm:h-11 rounded-lg flex items-center justify-center transition-colors ${
+                      active
+                        ? 'bg-stream-accent text-white shadow-glow-red'
+                        : 'bg-stream-black/60 text-stream-text-secondary hover:bg-stream-black hover:text-white'
+                    }`}
+                    title={t.label}
+                    aria-label={t.label}
+                  >
+                    {t.id === 'overview' && (
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M4 4h7v7H4zM13 4h7v4h-7zM13 11h7v9h-7zM4 13h7v7H4z" />
+                      </svg>
+                    )}
+                    {t.id === 'users' && (
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M16 14a4 4 0 10-8 0M4 20a4 4 0 014-4h8a4 4 0 014 4M12 10a4 4 0 100-8 4 4 0 000 8z" />
+                      </svg>
+                    )}
+                    {t.id === 'content' && (
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 012-2h6.5L20 6.5V19a2 2 0 01-2 2H6a2 2 0 01-2-2z" />
+                        <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M14 3v4h4" />
+                      </svg>
+                    )}
+                    {t.id === 'monitoring' && (
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M4 19h16M6 17V9M12 17V5M18 17v-7" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
             </nav>
           </aside>
 
