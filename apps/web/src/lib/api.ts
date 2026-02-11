@@ -133,6 +133,34 @@ async function uploadFile(
   });
 }
 
+/** Admin: extract content metadata from a poster/screenshot image (requires OPENAI_API_KEY on server). */
+export type ExtractFromImageResult = {
+  title: string | null;
+  description: string | null;
+  releaseYear: number | null;
+  rating: string | null;
+  duration: number | null;
+  type: 'movie' | 'series';
+};
+
+async function adminUploadFile<T>(path: string, formKey: string, file: File): Promise<T> {
+  const urlStr = `${getApiBase()}${path}`;
+  const token = typeof getAccessToken === 'function' ? getAccessToken() : null;
+  const formData = new FormData();
+  formData.append(formKey, file);
+  const res = await fetch(urlStr, {
+    method: 'POST',
+    credentials: 'include',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Request failed');
+  }
+  return res.json();
+}
+
 export const api = {
   auth: {
     login: (email: string, password: string) =>
@@ -285,6 +313,8 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify({ disabled, logoutSessions }),
       }),
+    extractFromImage: (file: File) =>
+      adminUploadFile<ExtractFromImageResult>('/admin/extract-from-image', 'image', file),
   },
 };
 

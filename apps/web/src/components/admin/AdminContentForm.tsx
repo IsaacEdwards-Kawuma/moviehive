@@ -49,8 +49,35 @@ export function AdminContentForm({
     thumbnailUrl: '',
   });
   const [addingEpisode, setAddingEpisode] = useState(false);
+  const [extractLoading, setExtractLoading] = useState(false);
+  const [extractError, setExtractError] = useState('');
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, { onClose, active: !loading });
+
+  const handleExtractFromImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setExtractError('');
+    setExtractLoading(true);
+    if (imageInputRef.current) imageInputRef.current.value = '';
+    try {
+      const result = await api.admin.extractFromImage(file);
+      setForm((prev) => ({
+        ...prev,
+        ...(result.title != null && result.title !== '' ? { title: result.title } : {}),
+        ...(result.description != null ? { description: result.description } : {}),
+        ...(result.releaseYear != null ? { releaseYear: result.releaseYear } : {}),
+        ...(result.rating != null ? { rating: result.rating } : {}),
+        ...(result.duration != null ? { duration: result.duration } : {}),
+        ...(result.type ? { type: result.type } : {}),
+      }));
+    } catch (err) {
+      setExtractError(err instanceof Error ? err.message : 'Extract failed');
+    } finally {
+      setExtractLoading(false);
+    }
+  };
 
   useEffect(() => {
     setGenresLoading(true);
@@ -153,6 +180,24 @@ export function AdminContentForm({
         </div>
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {error && <p className="text-stream-accent text-sm">{error}</p>}
+          <div className="rounded-lg border border-stream-gray bg-stream-black/50 p-3 space-y-2">
+            <p className="text-sm font-medium text-stream-text-secondary">Fill from image</p>
+            <p className="text-xs text-stream-text-secondary">
+              Upload a poster, screenshot, or info page; we’ll try to fill title, year, rating, and more.
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleExtractFromImage}
+                disabled={extractLoading}
+                className="text-sm text-stream-text-secondary file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-stream-accent file:text-white file:text-sm"
+              />
+              {extractLoading && <span className="text-stream-text-secondary text-sm">Extracting…</span>}
+            </div>
+            {extractError && <p className="text-stream-accent text-sm">{extractError}</p>}
+          </div>
           <div>
             <label className="block text-sm text-stream-text-secondary mb-1">Type</label>
             <select

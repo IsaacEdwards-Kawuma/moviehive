@@ -1,10 +1,25 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { z } from 'zod';
+import OpenAI from 'openai';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/admin.js';
 
 const router = Router();
+
+const uploadImageMemory = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only JPEG, PNG, WebP, GIF images are allowed'));
+    }
+  },
+});
 
 /** Send a notification to every user in the system (fire-and-forget). */
 async function notifyAllUsers(notification: {
@@ -453,6 +468,91 @@ router.post('/genres/ensure-defaults', requireAuth, requireAdmin, async (_req, r
     res.status(500).json({ message: 'Failed to ensure default genres' });
   }
 });
+
+// ---------- Extract content metadata from image (vision AI) ----------
+
+const EXTRACT_PROMPT = `Look at this image. It may be a movie poster, a screenshot from a streaming app, a DVD cover, or a page showing movie/series info.
+Extract any visible metadata and return a single JSON object with only these keys (use null for missing values):
+- title (string): movie or series title
+- description (string or null): short plot/synopsis if visible
+- releaseYear (number or null): year of release
+- rating (string or null): content rating if visible (e.g. "PG-13", "R", "TV-MA")
+- duration (number or null): runtime in minutes if visible
+- type (string): "movie" or "series" (guess from context if unclear)
+Return only the JSON object, no other text.`;
+
+router.post(
+  '/extract-from-image',
+  requireAuth,
+  requireAdmin,
+  uploadImageMemory.single('image'),
+  async (req, res) => {
+    if (!req.file) {
+      res.status(400).json({ error: 'No image file provided. Use form field name "image".' });
+      return;
+    }
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      res.status(503).json({
+        error: 'Image extraction is not configured. Set OPENAI_API_KEY in the server environment.',
+      });
+      return;
+    }
+    try {
+      const base64 = req.file.buffer.toString('base64');
+      const mime = req.file.mimetype || 'image/jpeg';
+      const dataUrl = `data:${mime};base64,${base64}`;
+
+      const openai = new OpenAI({ apiKey });
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'user', content: [{ type: 'text', text: EXTRACT_PROMPT }, { type: 'image_url', image_url: { url: dataUrl } }] },
+        ],
+        max_tokens: 500,
+      });
+      const raw = completion.choices[0]?.message?.content?.trim();
+      if (!raw) {
+        res.status(502).json({ error: 'No response from vision service' });
+        return;
+      }
+      const json = raw.replace(/^```json?\s*|\s*```$/g, '').trim();
+      const parsed = JSON.parse(json) as {
+        title?: string | null;
+        description?: string | null;
+        releaseYear?: number | null;
+        rating?: string | null;
+        duration?: number | null;
+        type?: string | null;
+      };
+      const result = {
+        title: typeof parsed.title === 'string' ? parsed.title : null,
+        description: typeof parsed.description === 'string' ? parsed.description : null,
+        releaseYear: typeof parsed.releaseYear === 'number' ? parsed.releaseYear : null,
+        rating: typeof parsed.rating === 'string' ? parsed.rating : null,
+        duration: typeof parsed.duration === 'number' ? parsed.duration : null,
+        type: parsed.type === 'series' ? 'series' : 'movie',
+      };
+      res.json(result);
+    } catch (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          res.status(413).json({ error: 'Image too large (max 10 MB)' });
+          return;
+        }
+        res.status(400).json({ error: err.message });
+        return;
+      }
+      if (err instanceof SyntaxError) {
+        console.error('Extract-from-image: invalid JSON from model', err);
+        res.status(502).json({ error: 'Could not parse metadata from image' });
+        return;
+      }
+      console.error('Extract-from-image error:', err);
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Image extraction failed' });
+    }
+  }
+);
 
 // ---------- Analytics / monitoring (admin only) ----------
 
